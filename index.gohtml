@@ -1,0 +1,134 @@
+{{- /*gotype: github.com/gofu/gomon.IndexData*/ -}}
+<style>
+    body {
+        font-family: Consolas, "Source Code Pro", monospace;
+    }
+
+
+    fieldset {
+        padding-left: 0;
+    }
+
+    .go-id {
+        color: cadetblue;
+    }
+
+    .go-op {
+        color: blueviolet;
+    }
+
+    .go-duration {
+        color: brown;
+    }
+
+    .go-package {
+        color: darkgrey;
+    }
+
+    .go-line {
+        color: skyblue;
+    }
+
+    .go-skipped {
+        color: gray;
+    }
+
+    .go-root > div {
+    }
+
+    .go-root-label {
+        text-align: right;
+        font-weight: bold;
+    }
+
+    .go-root-PROJECT {
+        background-color: #1a2a18;
+    }
+
+    .go-root-label-PROJECT {
+        color: #1a2a18;
+    }
+
+    .go-root-GOROOT {
+        background-color: #302020;
+    }
+
+    .go-root-label-GOROOT {
+        color: #302020;
+    }
+
+    .go-root-GOPATH {
+        background-color: #1a1b2a;
+    }
+
+    .go-root-label-GOPATH {
+        color: #1a1b2a;
+    }
+</style>
+<div>Running: {{sub .Total .Skipped}}{{if .Skipped}}<span class="go-skipped"> skipped {{.Skipped}}</span>{{end}}</div>
+<form method="get">
+    <label>Minimum duration
+        <select name="min" onchange="this.form.submit()">
+            <option></option>
+            <option {{if eq .Min "1m"}}selected{{end}}>1m</option>
+            <option {{if eq .Min "2m"}}selected{{end}}>2m</option>
+            <option {{if eq .Min "3m"}}selected{{end}}>3m</option>
+            <option {{if eq .Min "5m"}}selected{{end}}>5m</option>
+            <option {{if eq .Min "8m"}}selected{{end}}>8m</option>
+            <option {{if eq .Min "13m"}}selected{{end}}>13m</option>
+            <option {{if eq .Min "21m"}}selected{{end}}>21m</option>
+            <option {{if eq .Min "34m"}}selected{{end}}>34m</option>
+            <option {{if eq .Min "55m"}}selected{{end}}>55m</option>
+        </select>
+    </label>
+    <label>Goroutine markup limit
+        <select name="markup" onchange="this.form.submit()">
+            <option {{if eq .MarkupLimit 1}}selected{{end}}>1</option>
+            <option {{if eq .MarkupLimit 3}}selected{{end}}>3</option>
+            <option {{if eq .MarkupLimit 5}}selected{{end}}>5</option>
+            <option {{if eq .MarkupLimit 10}}selected{{end}}>10</option>
+            <option {{if eq .MarkupLimit 20}}selected{{end}}>20</option>
+            <option {{if eq .MarkupLimit 30}}selected{{end}}>30</option>
+            <option {{if eq .MarkupLimit 50}}selected{{end}}>50</option>
+            <option {{if eq .MarkupLimit 100}}selected{{end}}>100</option>
+            <option {{if eq .MarkupLimit 0}}selected{{end}} value="0">All</option>
+        </select>
+    </label>
+    <label>Context line limit
+        <select name="lines" onchange="this.form.submit()">
+            <option value="-1">Off</option>
+            <option {{if eq .Lines 0}}selected{{end}}>0</option>
+            <option {{if eq .Lines 1}}selected{{end}}>1</option>
+            <option {{if eq .Lines 2}}selected{{end}}>2</option>
+            <option {{if eq .Lines 3}}selected{{end}}>3</option>
+            <option {{if eq .Lines 4}}selected{{end}}>4</option>
+            <option {{if eq .Lines 5}}selected{{end}}>5</option>
+            <option {{if eq .Lines 6}}selected{{end}}>6</option>
+            <option {{if eq .Lines 7}}selected{{end}}>7</option>
+            <option {{if eq .Lines 8}}selected{{end}}>8</option>
+            <option {{if eq .Lines 9}}selected{{end}}>9</option>
+            <option {{if eq .Lines 10}}selected{{end}}>10</option>
+        </select>
+    </label>
+</form>
+{{range .Running}}
+    <div>
+        <div class="go-id" title="Goroutine ID">Go#{{.ID}}</div>
+        <div class="go-op">{{.Op}}</div>
+        <div class="go-duration">{{.Duration}}</div>
+        {{range $i,$stack:= .Stack}}
+        <fieldset class="go-root go-root-{{.Root}}">
+            <legend><span class="go-line">{{.Line}}:</span><span class="go-package">{{.Package}}.</span>{{.Method}}
+                <span class="go-root-label go-root-label-{{.Root}}">{{.Root}}</span>
+                {{if and (eq $i 0) (not .Caller)}}
+                    <span class="go-line">Main goroutine!</span>
+                {{end}}
+            </legend>
+            {{.Prefix}}
+            {{end}}
+            {{range reverseStack .Stack}}
+            {{.Suffix}}
+        </fieldset>
+        {{end}}
+    </div>
+{{end}}
