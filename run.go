@@ -148,6 +148,9 @@ func (s *Service) GetRunning() ([]Goroutine, error) {
 		return nil, fmt.Errorf("read %s response: %w", req.URL, err)
 	}
 	sort.Slice(running, func(i, j int) bool {
+		if len(running[i].Stack) > 0 && !running[i].Stack[0].Caller {
+			return true
+		}
 		return running[i].Duration > running[j].Duration
 	})
 	return running, nil
