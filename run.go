@@ -388,18 +388,20 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	for i, goroutine := range data.Running {
-		if data.MarkupLimit != 0 && i > data.MarkupLimit {
-			break
-		}
-		for j, s := range goroutine.Stack {
-			hh, err := h.highlightStack(s, data.Lines)
-			if err != nil {
-				h.serveError(w, r, err)
-				return
+	if data.Lines >= 0 {
+		for i, goroutine := range data.Running {
+			if data.MarkupLimit != 0 && i > data.MarkupLimit {
+				break
 			}
-			goroutine.Stack[j].Prefix = template.HTML(hh.Prefix)
-			goroutine.Stack[j].Suffix = template.HTML(hh.Suffix)
+			for j, s := range goroutine.Stack {
+				hh, err := h.highlightStack(s, data.Lines)
+				if err != nil {
+					h.serveError(w, r, err)
+					return
+				}
+				goroutine.Stack[j].Prefix = template.HTML(hh.Prefix)
+				goroutine.Stack[j].Suffix = template.HTML(hh.Suffix)
+			}
 		}
 	}
 	var buf bytes.Buffer
@@ -429,6 +431,9 @@ func (h *Handler) serveError(w http.ResponseWriter, r *http.Request, err error) 
 }
 
 func (h *Handler) highlightStack(s StackElem, wrap int) (Highlight, error) {
+	if wrap < 0 {
+		return Highlight{}, nil
+	}
 	var root string
 	style := styles.Registry["vulcan"]
 	switch s.Root {
