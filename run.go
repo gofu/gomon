@@ -133,7 +133,8 @@ type GoroutineContent struct {
 }
 
 func (s *Service) GetRunning() ([]Goroutine, error) {
-	req, err := http.NewRequest("GET", s.url, nil)
+	uri := strings.TrimRight(s.url, "/") + "/goroutine?debug=2"
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
