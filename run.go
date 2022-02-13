@@ -518,18 +518,12 @@ func (h *Highlighter) Highlight(file string, line, wrapSize int, style *chroma.S
 		return nil
 	}
 	for _, tok := range allTokens {
-		if file == "../cloner/cmd/cloner/main.go" && line == 405 && haveLines == 400 {
-			log.Printf("got file")
-		}
 		lfCount := strings.Count(tok.Value, "\n")
 		if haveLines+lfCount < skipLines {
 			haveLines += lfCount
 			continue
 		}
 		if haveLines+lfCount >= line && !gotPrefix {
-			if haveLines+lfCount > line {
-				log.Printf("overflow")
-			}
 			haveLines += lfCount
 			tokens = appendToken(tokens, tok, 0)
 			buf.Reset()
