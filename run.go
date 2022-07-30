@@ -108,16 +108,17 @@ func NewService(url, localRoot, localGoRoot, localGoPath, remoteRoot, remoteGoRo
 }
 
 type StackElem struct {
-	Caller  bool          `json:"caller"`
-	Package string        `json:"package"`
-	Method  string        `json:"method"`
-	Args    string        `json:"args,omitempty"`
-	File    string        `json:"file"`
-	Line    int           `json:"line"`
-	Root    string        `json:"root,omitempty"`
-	Extra   string        `json:"extra,omitempty"`
-	Prefix  template.HTML `json:"prefix,omitempty"`
-	Suffix  template.HTML `json:"suffix,omitempty"`
+	Caller    bool          `json:"caller"`
+	Package   string        `json:"package"`
+	Method    string        `json:"method"`
+	Args      string        `json:"args,omitempty"`
+	File      string        `json:"file"`
+	ShortFile string        `json:"shortFile"`
+	Line      int           `json:"line"`
+	Root      string        `json:"root,omitempty"`
+	Extra     string        `json:"extra,omitempty"`
+	Prefix    template.HTML `json:"prefix,omitempty"`
+	Suffix    template.HTML `json:"suffix,omitempty"`
 }
 
 type Goroutine struct {
@@ -241,12 +242,16 @@ func (p *goroutineParser) parseGoroutine(data string) (Goroutine, error) {
 		}
 		if strings.HasPrefix(matches[1], p.root) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.root), "/")
+			stack.ShortFile = stack.File
 			stack.Root = "PROJECT"
 		} else if strings.HasPrefix(matches[1], p.goroot) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.goroot), "/")
+			stack.ShortFile = strings.TrimPrefix(stack.File, "src/")
 			stack.Root = "GOROOT"
 		} else if strings.HasPrefix(matches[1], p.gopath) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.gopath), "/")
+			stack.ShortFile = strings.TrimPrefix(stack.File, "pkg/")
+			stack.ShortFile = strings.TrimPrefix(stack.ShortFile, "mod/")
 			stack.Root = "GOPATH"
 		} else if strings.HasPrefix(matches[1], "_cgo_") {
 			stack.File = matches[1]
