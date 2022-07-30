@@ -2,38 +2,40 @@
 <style>
     body {
         font-family: Consolas, "Source Code Pro", monospace;
+        background: #121212;
+        color: #fff;
     }
-
 
     fieldset {
         padding-left: 0;
     }
 
+    .go {
+        margin-bottom: 1rem;
+    }
+
     .go-id {
-        color: cadetblue;
+        color: #87ceeb;
     }
 
     .go-op {
-        color: blueviolet;
+        color: #db79ff;
     }
 
     .go-duration {
-        color: brown;
+        color: #ff8779;
     }
 
     .go-package {
-        color: darkgrey;
+        color: #a9a9a9;
     }
 
     .go-line {
-        color: skyblue;
+        color: #92C1C2;
     }
 
-    .go-skipped {
-        color: gray;
-    }
-
-    .go-root > div {
+    .go-hidden {
+        color: #878787;
     }
 
     .go-root-label {
@@ -46,7 +48,7 @@
     }
 
     .go-root-label-PROJECT {
-        color: #1a2a18;
+        color: #e1f6dd;
     }
 
     .go-root-GOROOT {
@@ -54,7 +56,7 @@
     }
 
     .go-root-label-GOROOT {
-        color: #302020;
+        color: #ffeded;
     }
 
     .go-root-GOPATH {
@@ -62,10 +64,10 @@
     }
 
     .go-root-label-GOPATH {
-        color: #1a1b2a;
+        color: #fdfdff;
     }
 </style>
-<div>Running: {{sub .Total .Skipped}}{{if .Skipped}}<span class="go-skipped"> skipped {{.Skipped}}</span>{{end}}</div>
+<div>{{sub .Total .Skipped}} goroutines{{if .Skipped}}<span class="go-hidden"> {{.Skipped}} hidden</span>{{end}}</div>
 <form method="get">
     <label>Minimum duration
         <select name="min" onchange="this.form.submit()">
@@ -112,10 +114,10 @@
     </label>
 </form>
 {{range .Running}}
-    <div>
-        <div class="go-id" title="Goroutine ID">Go#{{.ID}}</div>
-        <div class="go-op">{{.Op}}</div>
-        <div class="go-duration">{{.Duration}}</div>
+    <div class="go">
+        <span class="go-id" title="Goroutine ID">Go#{{.ID}}</span>
+        <span class="go-op">{{.Op}}</span>
+        <span class="go-duration">{{.Duration}}</span>
         {{range $i,$stack:= .Stack}}
         <fieldset class="go-root go-root-{{.Root}}">
             <legend><span class="go-line">{{.Line}}:</span><span class="go-package">{{.Package}}.</span>{{.Method}}

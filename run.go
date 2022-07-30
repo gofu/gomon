@@ -25,7 +25,6 @@ import (
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters/html"
 	"github.com/alecthomas/chroma/lexers/g"
-	"github.com/alecthomas/chroma/styles"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 )
@@ -439,7 +438,6 @@ func (h *Handler) highlightStack(s StackElem, wrap int) (Highlight, error) {
 		return Highlight{}, nil
 	}
 	var root string
-	style := styles.Registry["vulcan"]
 	switch s.Root {
 	case "PROJECT":
 		root = h.root
@@ -450,7 +448,7 @@ func (h *Handler) highlightStack(s StackElem, wrap int) (Highlight, error) {
 	default:
 		return Highlight{}, nil
 	}
-	hh, err := h.highlighter.Highlight(path.Join(root, s.File), s.Line, wrap, style)
+	hh, err := h.highlighter.Highlight(path.Join(root, s.File), s.Line, wrap)
 	if err != nil {
 		return hh, err
 	}
@@ -468,13 +466,10 @@ type Highlight struct {
 	Suffix string
 }
 
-func (h *Highlighter) Highlight(file string, line, wrapSize int, style *chroma.Style) (Highlight, error) {
+func (h *Highlighter) Highlight(file string, line, wrapSize int) (Highlight, error) {
 	var hh Highlight
 	if wrapSize < 0 {
 		return hh, nil
-	}
-	if style == nil {
-		style = styles.Registry["dracula"]
 	}
 	allTokens, err := h.getTokens(file)
 	if err != nil {
@@ -513,7 +508,7 @@ func (h *Highlighter) Highlight(file string, line, wrapSize int, style *chroma.S
 			return nil
 		}
 		buf.Reset()
-		err = formatter.Format(&buf, style, chroma.Literator(tokens...))
+		err = formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
 		if err != nil {
 			return err
 		}
@@ -531,7 +526,7 @@ func (h *Highlighter) Highlight(file string, line, wrapSize int, style *chroma.S
 			haveLines += lfCount
 			tokens = appendToken(tokens, tok, 0)
 			buf.Reset()
-			err = formatter.Format(&buf, style, chroma.Literator(tokens...))
+			err = formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
 			if err != nil {
 				return hh, err
 			}

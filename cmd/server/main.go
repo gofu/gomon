@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
 
 	"github.com/gofu/gomon"
 )
@@ -22,7 +21,6 @@ func main() {
 	flag.StringVar(&conf.RemoteGoRoot, "remote-goroot", "", "Remote GOROOT")
 	flag.StringVar(&conf.RemoteGoPath, "remote-gopath", "", "Remote GOPATH")
 	flag.Parse()
-	runtime.GOROOT()
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 	err := gomon.Run(ctx, conf)
 	if err != nil {
