@@ -25,6 +25,7 @@ import (
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters/html"
 	"github.com/alecthomas/chroma/lexers/g"
+	"golang.org/x/exp/constraints"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 )
@@ -327,8 +328,11 @@ type IndexData struct {
 	Total       int
 	Lines       int
 	Skipped     int
-	Min         string
+	Min         time.Duration
 	MarkupLimit int
+	Durations   []time.Duration
+	Markups     []int
+	Contexts    []int
 	Running     []Goroutine
 	Reversed    []Goroutine
 }
@@ -353,8 +357,11 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := IndexData{
-		Total:   len(running),
-		Running: running,
+		Total:     len(running),
+		Running:   running,
+		Durations: fibonacciSlice(20, time.Minute),
+		Markups:   fibonacciSlice(10, 1),
+		Contexts:  fibonacciSlice(10, 1),
 	}
 	if min := r.URL.Query().Get("min"); len(min) != 0 {
 		minDur, err := time.ParseDuration(min)
@@ -370,7 +377,7 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 			}
 			filtered = append(filtered, gr)
 		}
-		data.Min = min
+		data.Min = minDur
 		data.Running = filtered
 	}
 	if markupLimit := r.URL.Query().Get("markup"); len(markupLimit) != 0 {
@@ -597,4 +604,19 @@ func (h *Highlighter) getTokens(file string) ([]chroma.Token, error) {
 		return nil, fmt.Errorf("expected cache type %T, got %T", cached, v)
 	}
 	return cached, nil
+}
+
+func fibonacciSlice[T constraints.Integer | constraints.Float](count int, multiplier T) []T {
+	durs := make([]T, 0, count)
+	for i := 0; i < count; i++ {
+		switch i {
+		case 0:
+			durs = append(durs, multiplier)
+		case 1:
+			durs = append(durs, 2*multiplier)
+		default:
+			durs = append(durs, durs[i-2]+durs[i-1])
+		}
+	}
+	return durs
 }

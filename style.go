@@ -39,7 +39,7 @@ var Vulcan = chroma.MustNewStyle("vulcan", chroma.StyleEntries{
 	chroma.GenericUnderline:         "underline",
 	chroma.Error:                    red,
 	chroma.Keyword:                  blue,
-	chroma.KeywordConstant:          red + " bg:" + grey2,
+	chroma.KeywordConstant:          red,
 	chroma.KeywordDeclaration:       blue,
 	chroma.KeywordNamespace:         purple,
 	chroma.KeywordPseudo:            purple,

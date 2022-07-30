@@ -1,118 +1,126 @@
 {{- /*gotype: github.com/gofu/gomon.IndexData*/ -}}
-<style>
-    body {
-        font-family: Consolas, "Source Code Pro", monospace;
-        background: #121212;
-        color: #fff;
-    }
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Running goroutines</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+        }
 
-    fieldset {
-        padding-left: 0;
-    }
+        body {
+            font-family: Consolas, "Source Code Pro", monospace;
+            background: #121212;
+            color: #fff;
+            margin: .5rem;
+            font-size: 1rem;
+            line-height: 1.2rem;
+        }
 
-    .go {
-        margin-bottom: 1rem;
-    }
+        fieldset {
+            padding-left: 0;
+        }
 
-    .go-id {
-        color: #87ceeb;
-    }
+        pre {
+            margin: 0;
+        }
 
-    .go-op {
-        color: #db79ff;
-    }
+        .hero {
+            margin-bottom: .5rem;
+        }
 
-    .go-duration {
-        color: #ff8779;
-    }
+        .go {
+            margin-bottom: 1rem;
+        }
 
-    .go-package {
-        color: #a9a9a9;
-    }
+        .go-id {
+            color: #87ceeb;
+        }
 
-    .go-line {
-        color: #92C1C2;
-    }
+        .go-op {
+            color: #db79ff;
+        }
 
-    .go-hidden {
-        color: #878787;
-    }
+        .go-duration {
+            color: #ff8779;
+        }
 
-    .go-root-label {
-        text-align: right;
-        font-weight: bold;
-    }
+        .go-package {
+            color: #a9a9a9;
+        }
 
-    .go-root-PROJECT {
-        background-color: #1a2a18;
-    }
+        .go-line {
+            color: #92C1C2;
+        }
 
-    .go-root-label-PROJECT {
-        color: #e1f6dd;
-    }
+        .go-hidden {
+            color: #878787;
+        }
 
-    .go-root-GOROOT {
-        background-color: #302020;
-    }
+        .go-root-label {
+            text-align: right;
+            font-weight: bold;
+        }
 
-    .go-root-label-GOROOT {
-        color: #ffeded;
-    }
+        .go-root-PROJECT {
+            background-color: #1a2a18;
+        }
 
-    .go-root-GOPATH {
-        background-color: #1a1b2a;
-    }
+        .go-root-label-PROJECT {
+            color: #e1f6dd;
+        }
 
-    .go-root-label-GOPATH {
-        color: #fdfdff;
-    }
-</style>
-<div>{{sub .Total .Skipped}} goroutines{{if .Skipped}}<span class="go-hidden"> {{.Skipped}} hidden</span>{{end}}</div>
-<form method="get">
-    <label>Minimum duration
-        <select name="min" onchange="this.form.submit()">
-            <option></option>
-            <option {{if eq .Min "1m"}}selected{{end}}>1m</option>
-            <option {{if eq .Min "2m"}}selected{{end}}>2m</option>
-            <option {{if eq .Min "3m"}}selected{{end}}>3m</option>
-            <option {{if eq .Min "5m"}}selected{{end}}>5m</option>
-            <option {{if eq .Min "8m"}}selected{{end}}>8m</option>
-            <option {{if eq .Min "13m"}}selected{{end}}>13m</option>
-            <option {{if eq .Min "21m"}}selected{{end}}>21m</option>
-            <option {{if eq .Min "34m"}}selected{{end}}>34m</option>
-            <option {{if eq .Min "55m"}}selected{{end}}>55m</option>
-        </select>
-    </label>
-    <label>Goroutine markup limit
-        <select name="markup" onchange="this.form.submit()">
-            <option {{if eq .MarkupLimit 1}}selected{{end}}>1</option>
-            <option {{if eq .MarkupLimit 3}}selected{{end}}>3</option>
-            <option {{if eq .MarkupLimit 5}}selected{{end}}>5</option>
-            <option {{if eq .MarkupLimit 10}}selected{{end}}>10</option>
-            <option {{if eq .MarkupLimit 20}}selected{{end}}>20</option>
-            <option {{if eq .MarkupLimit 30}}selected{{end}}>30</option>
-            <option {{if eq .MarkupLimit 50}}selected{{end}}>50</option>
-            <option {{if eq .MarkupLimit 100}}selected{{end}}>100</option>
-            <option {{if eq .MarkupLimit 0}}selected{{end}} value="0">All</option>
-        </select>
-    </label>
-    <label>Context line limit
-        <select name="lines" onchange="this.form.submit()">
-            <option value="-1">Off</option>
-            <option {{if eq .Lines 0}}selected{{end}}>0</option>
-            <option {{if eq .Lines 1}}selected{{end}}>1</option>
-            <option {{if eq .Lines 2}}selected{{end}}>2</option>
-            <option {{if eq .Lines 3}}selected{{end}}>3</option>
-            <option {{if eq .Lines 4}}selected{{end}}>4</option>
-            <option {{if eq .Lines 5}}selected{{end}}>5</option>
-            <option {{if eq .Lines 6}}selected{{end}}>6</option>
-            <option {{if eq .Lines 7}}selected{{end}}>7</option>
-            <option {{if eq .Lines 8}}selected{{end}}>8</option>
-            <option {{if eq .Lines 9}}selected{{end}}>9</option>
-            <option {{if eq .Lines 10}}selected{{end}}>10</option>
-        </select>
-    </label>
-</form>
+        .go-root-GOROOT {
+            background-color: #302020;
+        }
+
+        .go-root-label-GOROOT {
+            color: #ffeded;
+        }
+
+        .go-root-GOPATH {
+            background-color: #1a1b2a;
+        }
+
+        .go-root-label-GOPATH {
+            color: #fdfdff;
+        }
+    </style>
+</head>
+<body>
+<div class="hero">
+    <div>{{sub .Total .Skipped}} goroutines{{if .Skipped}}<span class="go-hidden"> {{.Skipped}} hidden</span>{{end}}
+    </div>
+    <form method="get">
+        <label>Minimum duration
+            <select name="min" onchange="this.form.submit()">
+                <option value="">All</option>
+                {{range $dur := .Durations}}
+                    <option {{if eq $.Min $dur}}selected{{end}}>{{$dur}}</option>
+                {{end}}
+            </select>
+        </label>
+        <label>Goroutine markup limit
+            <select name="markup" onchange="this.form.submit()">
+                {{range $mar := .Markups}}
+                    <option {{if eq $.MarkupLimit $mar}}selected{{end}}>{{$mar}}</option>
+                {{end}}
+                <option {{if eq .MarkupLimit 0}}selected{{end}} value="0">All</option>
+            </select>
+        </label>
+        <label>Context line limit
+            <select name="lines" onchange="this.form.submit()">
+                <option value="-1">Off</option>
+                <option {{if eq .Lines 0}}selected{{end}}>0</option>
+                {{range $con := .Contexts}}
+                    <option {{if eq $.Lines $con}}selected{{end}}>{{$con}}</option>
+                {{end}}
+            </select>
+        </label>
+    </form>
+</div>
 {{range .Running}}
     <div class="go">
         <span class="go-id" title="Goroutine ID">Go#{{.ID}}</span>
@@ -134,3 +142,5 @@
         {{end}}
     </div>
 {{end}}
+</body>
+</html>
