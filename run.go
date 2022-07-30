@@ -607,16 +607,16 @@ func (h *Highlighter) getTokens(file string) ([]chroma.Token, error) {
 }
 
 func fibonacciSlice[T constraints.Integer | constraints.Float](count int, multiplier T) []T {
-	durs := make([]T, count)
+	elems := make([]T, count)
 	for i := 0; i < count; i++ {
 		switch i {
 		case 0:
-			durs[i] = multiplier
+			elems[i] = multiplier
 		case 1:
-			durs[i] = 2 * multiplier
+			elems[i] = 2 * multiplier
 		default:
-			durs[i] = durs[i-2] + durs[i-1]
+			elems[i] = elems[i-2] + elems[i-1]
 		}
 	}
-	return durs
+	return elems
 }
