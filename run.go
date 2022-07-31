@@ -12,6 +12,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/pprof"
+	_ "net/http/pprof"
 	"os"
 	"path"
 	"regexp"
@@ -56,9 +58,16 @@ func Run(ctx context.Context, conf Config) error {
 	}
 	svc := NewService(conf.URL, conf.LocalRoot, conf.LocalGoRoot, conf.LocalGoPath, conf.RemoteRoot, conf.RemoteGoRoot, conf.RemoteGoPath)
 	h := NewHandler(conf.LocalRoot, conf.LocalGoRoot, conf.LocalGoPath, svc)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.Handle("/", h)
 	srv := &http.Server{
 		Addr:              ln.Addr().String(),
-		Handler:           h,
+		Handler:           mux,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
