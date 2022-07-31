@@ -48,6 +48,7 @@
         }
 
         .go-package {
+            cursor: pointer;
             color: #a9a9a9;
         }
 
@@ -96,34 +97,40 @@
 </head>
 <body>
 <div class="hero">
-    <div>{{sub .Total .Skipped}} goroutines{{if .Skipped}}<span class="go-hidden"> {{.Skipped}} hidden</span>{{end}}
-    </div>
     <form method="get">
-        <label>Minimum duration
-            <select name="min" onchange="this.form.submit()">
-                <option value="">All</option>
-                {{range $dur := .Durations}}
-                    <option {{if eq $.Min $dur}}selected{{end}}>{{$dur}}</option>
-                {{end}}
-            </select>
-        </label>
-        <label>Goroutine markup limit
-            <select name="markup" onchange="this.form.submit()">
-                {{range $mar := .Markups}}
-                    <option {{if eq $.MarkupLimit $mar}}selected{{end}}>{{$mar}}</option>
-                {{end}}
-                <option {{if eq .MarkupLimit 0}}selected{{end}} value="0">All</option>
-            </select>
-        </label>
-        <label>Context line limit
-            <select name="lines" onchange="this.form.submit()">
-                <option value="-1">Off</option>
-                <option {{if eq .Lines 0}}selected{{end}}>0</option>
-                {{range $con := .Contexts}}
-                    <option {{if eq $.Lines $con}}selected{{end}}>{{$con}}</option>
-                {{end}}
-            </select>
-        </label>
+        <div>
+            Showing {{sub .Total .Skipped}} goroutines.
+            {{if .Skipped}}
+                <span class="go-hidden"> ({{.Skipped}} filtered)</span>
+            {{end}}
+            <label>Filter by minimum duration:
+                <select name="min" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    {{range $dur := .Durations}}
+                        <option {{if eq $.Min $dur}}selected{{end}}>{{$dur}}</option>
+                    {{end}}
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Max displayed goroutine sources:
+                <select name="markup" onchange="this.form.submit()">
+                    {{range $mar := .Markups}}
+                        <option {{if eq $.MarkupLimit $mar}}selected{{end}}>{{$mar}}</option>
+                    {{end}}
+                    <option {{if eq .MarkupLimit 0}}selected{{end}} value="0">All</option>
+                </select>
+            </label>
+            <label>Show lines before/after:
+                <select name="lines" onchange="this.form.submit()">
+                    <option value="-1">Off</option>
+                    <option {{if eq .Lines 0}}selected{{end}}>0</option>
+                    {{range $con := .Contexts}}
+                        <option {{if eq $.Lines $con}}selected{{end}}>{{$con}}</option>
+                    {{end}}
+                </select>
+            </label>
+        </div>
     </form>
 </div>
 {{range .Running}}
@@ -142,13 +149,25 @@
                     <span class="go-file" contenteditable>{{.ShortFile}}<span class="go-line">:{{.Line}}</span></span>
                 {{end}}
             </legend>
-            {{.Prefix}}
-            {{end}}
-            {{range reverseStack .Stack}}
-            {{.Suffix}}
+            <div>
+                {{.Prefix}}
+                {{end}}
+                {{range reverseStack .Stack}}
+                {{.Suffix}}
+            </div>
         </fieldset>
         {{end}}
     </div>
 {{end}}
+<script>
+    for (const el of document.getElementsByClassName('go-package')) {
+        el.addEventListener('click', e => {
+            e.preventDefault();
+            // select .go-code-prefix
+            let d = el.parentElement.nextElementSibling.style.display;
+            el.parentElement.nextElementSibling.style.display = d === 'none' ? 'block' : 'none';
+        })
+    }
+</script>
 </body>
 </html>
