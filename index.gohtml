@@ -163,7 +163,6 @@
     for (const el of document.getElementsByClassName('go-package')) {
         el.addEventListener('click', e => {
             e.preventDefault();
-            // select .go-code-prefix
             let d = el.parentElement.nextElementSibling.style.display;
             el.parentElement.nextElementSibling.style.display = d === 'none' ? 'block' : 'none';
         })
