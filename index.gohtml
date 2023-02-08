@@ -152,8 +152,10 @@
             <div>
                 {{.Prefix}}
                 {{end}}
-                {{range reverseStack .Stack}}
-                {{.Suffix}}
+                {{$stack := .Stack}}
+                {{$stackLen := len $stack}}
+                {{range $i, $v := .Stack}}
+                {{(index $stack (revIndex $i $stackLen)).Suffix}}
             </div>
         </fieldset>
         {{end}}
