@@ -1,11 +1,11 @@
 module github.com/gofu/gomon
 
-go 1.18
-
-require golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+go 1.19
 
 require (
-	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/dlclark/regexp2 v1.4.0 // indirect
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
+	github.com/alecthomas/chroma v0.10.0
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
+	golang.org/x/sync v0.1.0
 )
+
+require github.com/dlclark/regexp2 v1.8.0 // indirect
