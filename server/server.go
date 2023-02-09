@@ -11,8 +11,11 @@ import (
 	"time"
 
 	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/handlers"
 	"github.com/gofu/gomon/handlers/htmlhandler"
+	"github.com/gofu/gomon/handlers/indexhandler"
 	"github.com/gofu/gomon/handlers/jsonhandler"
+	"github.com/gofu/gomon/handlers/statichandler"
 	"github.com/gofu/gomon/highlight"
 	"github.com/gofu/gomon/highlight/highlightfs"
 	"github.com/gofu/gomon/profiler"
@@ -31,10 +34,10 @@ func StartServer(ctx context.Context, conf config.Server) error {
 	log.Printf("Listening on http://%s", ln.Addr())
 	group, ctx := errgroup.WithContext(ctx)
 	prof := httpprofiler.New(conf.PProfURL, conf.Remote.WithDefaults(conf.Local))
-	highlighter := &highlightfs.FS{Env: conf.Local}
+	hl := &highlightfs.FS{Env: conf.Local}
 	srv := &http.Server{
 		Addr:              ln.Addr().String(),
-		Handler:           NewServeMux(highlighter, prof),
+		Handler:           NewServeMux(hl, prof),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
@@ -57,15 +60,33 @@ func StartServer(ctx context.Context, conf config.Server) error {
 // NewServeMux returns an http.Handler that handles the following pages:
 //   - GET /debug/pprof - net/http/pprof handler, plaintext
 //   - GET /json - list all goroutines, JSON
-//   - GET /?min&max&limit&markup - list all goroutines, HTML
+//   - GET /html?min&max&markup&lines - list all goroutines, HTML
+//   - GET / - list all routes
 func NewServeMux(hl highlight.Highlighter, prof profiler.Profiler) *http.ServeMux {
+	router := handlers.Router{
+		Index: "/",
+		HTML:  "/html",
+		JSON:  "/json",
+		PProf: "/debug/pprof/",
+	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/debug/pprof/", pprof.Index)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	mux.Handle("/json", jsonhandler.New(prof))
-	mux.Handle("/", htmlhandler.New(hl, prof))
+	mux.HandleFunc(router.PProf, pprof.Index)
+	mux.HandleFunc(router.PProf+"cmdline", pprof.Cmdline)
+	mux.HandleFunc(router.PProf+"profile", pprof.Profile)
+	mux.HandleFunc(router.PProf+"symbol", pprof.Symbol)
+	mux.HandleFunc(router.PProf+"trace", pprof.Trace)
+	mux.Handle("/favicon.ico", statichandler.Handler{})
+	mux.Handle(router.JSON, jsonhandler.New(prof))
+	mux.Handle(router.HTML, htmlhandler.New(hl, prof))
+	index := indexhandler.Data{
+		PProfURL: prof.Source(),
+		Links: []indexhandler.Link{
+			{"index", router.Index, "this page"},
+			{"HTML", router.HTML, "running goroutines in HTML format"},
+			{"JSON", router.JSON, "running goroutines in JSON format"},
+			{"pprof", router.PProf, "debug profiler"},
+		},
+	}
+	mux.Handle(router.Index, indexhandler.New(index))
 	return mux
 }

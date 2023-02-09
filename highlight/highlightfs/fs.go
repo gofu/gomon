@@ -2,7 +2,6 @@
 package highlightfs
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -51,7 +50,7 @@ func (h *FS) getTokens(file string) ([]chroma.Token, error) {
 	if ok {
 		return cached, nil
 	}
-	v, err, _ := h.sf.Do(file, func() (interface{}, error) {
+	v, err, _ := h.sf.Do(file, func() (any, error) {
 		h.mu.RLock()
 		cached, ok := h.cache[file]
 		readFS := h.FS
@@ -59,7 +58,7 @@ func (h *FS) getTokens(file string) ([]chroma.Token, error) {
 		if ok {
 			return cached, nil
 		}
-		data, err := readFile(readFS, file)
+		data, err := readFSFile(readFS, file)
 		if err != nil {
 			return nil, err
 		}
@@ -76,17 +75,11 @@ func (h *FS) getTokens(file string) ([]chroma.Token, error) {
 		h.mu.Unlock()
 		return tokens, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	if cached, ok = v.([]chroma.Token); !ok {
-		return nil, fmt.Errorf("expected cache type %T, got %T", cached, v)
-	}
-	return cached, nil
+	return v.([]chroma.Token), err
 }
 
-// readFile reads file content from readFS, or local filesystem if readFS==nil.
-func readFile(readFS fs.FS, file string) ([]byte, error) {
+// readFSFile reads file content from readFS, or local filesystem if readFS==nil.
+func readFSFile(readFS fs.FS, file string) ([]byte, error) {
 	if readFS == nil {
 		return os.ReadFile(file)
 	}

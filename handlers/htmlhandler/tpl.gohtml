@@ -146,7 +146,7 @@
         <span class="go-id" title="Goroutine ID">Go#{{.ID}}</span>
         <span class="go-op">{{.Op}}</span>
         <span class="go-duration">{{.Duration}}</span>
-        {{range $i,$stack:= .Stack}}
+        {{range $i,$stack:= .CallStack}}
         <fieldset class="go-root go-root-{{.Root}}">
             <legend><span class="go-package">{{.Package}}.</span>{{.Method}}
                 <span class="go-root-label go-root-label-{{.Root}}">{{.Root}}</span>
@@ -160,9 +160,9 @@
             <div>
                 {{rawHTML .Prefix}}
                 {{end}}
-                {{$stack := .Stack}}
+                {{$stack := .CallStack}}
                 {{$stackLen := len $stack}}
-                {{range $i, $v := .Stack}}
+                {{range $i, $v := .CallStack}}
                 {{rawHTML (index $stack (revIndex $i $stackLen)).Suffix}}
             </div>
         </fieldset>

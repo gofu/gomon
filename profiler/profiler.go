@@ -20,7 +20,7 @@ const (
 )
 
 type FileLine struct {
-	// Root of the calling file.
+	// Root of the calling file (project, GOROOT, GOPATH).
 	Root RootType `json:"root"`
 	// File path, relative to Root.
 	File string `json:"file"`
@@ -36,26 +36,39 @@ type Highlight struct {
 	Suffix string `json:"suffix,omitempty"`
 }
 
-// StackElem contains a running goroutine's caller stack info.
-type StackElem struct {
-	Caller  bool   `json:"caller"`
-	Package string `json:"package"`
-	Method  string `json:"method"`
-	Args    string `json:"args,omitempty"`
-	Extra   string `json:"extra,omitempty"`
+// CallStack contains a running goroutine's caller stack info.
+type CallStack struct {
+	// FileLine contains caller's position in file/line.
 	FileLine
+	// Caller is true for every first goroutine in stack.
+	// The only exception is the main goroutine.
+	Caller bool `json:"caller"`
+	// Package name, as seen by the Go source code.
+	Package string `json:"package"`
+	// Method name, eg. package.(*Server).ServeHTTP.
+	Method string `json:"method"`
+	Args   string `json:"args,omitempty"`
+	Extra  string `json:"extra,omitempty"`
+	// Highlight is optionally present.
 	Highlight
 }
 
+// Goroutine and call stack information.
 type Goroutine struct {
-	ID       int           `json:"id"`
-	Op       string        `json:"op"`
+	// ID of this goroutine.
+	ID int `json:"id"`
+	// Op that's blocking this goroutine.
+	Op string `json:"op"`
+	// Duration that the goroutine has been blocked for.
 	Duration time.Duration `json:"duration,omitempty"`
-	Stack    []StackElem   `json:"stack,omitempty"`
+	// CallStack information.
+	CallStack []CallStack `json:"callStack,omitempty"`
 }
 
 // Profiler provides profiling information.
 type Profiler interface {
+	// Source identifier, eg. full /debug/pprof URL.
+	Source() string
 	// Goroutines that are currently running, without Highlight data.
 	Goroutines() ([]Goroutine, error)
 }

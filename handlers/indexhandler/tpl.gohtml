@@ -1,0 +1,17 @@
+{{/*gotype:github.com/gofu/gomon/handlers/indexhandler.Data*/}}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GoMon</title>
+</head>
+<body>
+<h1>GoMon</h1>
+<p>Monitor running goroutines on <a href="{{.PProfURL}}" rel="noopener">{{.PProfURL}}</a></p>
+<ul>
+    {{range .Links}}
+        <li><a href="{{.HREF}}">{{.Name}}</a> - {{.Desc}}</li>
+    {{end}}
+</ul>
+</body>
+</html>

@@ -21,13 +21,13 @@ func MarkupGoroutines(ctx context.Context, goroutines []profiler.Goroutine, high
 		}
 		gr := gr
 		g.Go(func() error {
-			for j := range gr.Stack {
+			for j := range gr.CallStack {
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
 				default:
 				}
-				s := &gr.Stack[j]
+				s := &gr.CallStack[j]
 				err = highlighter.Highlight(s.FileLine, opts, &s.Highlight)
 				if err != nil {
 					return err

@@ -92,7 +92,7 @@ func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 		if cut := strings.IndexByte(method, '.'); cut != -1 {
 			pkg, method = pkg+method[:cut], method[cut+1:]
 		}
-		stack := profiler.StackElem{
+		stack := profiler.CallStack{
 			Caller:  caller,
 			Package: pkg,
 			Method:  method,
@@ -125,12 +125,12 @@ func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 			return gr, fmt.Errorf("invalid goroutine line: %s", matches[2])
 		}
 		stack.Extra = matches[3]
-		gr.Stack = append([]profiler.StackElem{stack}, gr.Stack...)
+		gr.CallStack = append([]profiler.CallStack{stack}, gr.CallStack...)
 	}
 	if err = s.Err(); err != nil {
 		return gr, err
 	}
-	if gr.ID == 0 || len(gr.Stack) == 0 {
+	if gr.ID == 0 || len(gr.CallStack) == 0 {
 		return gr, fmt.Errorf("did not find goroutine data in: %s", data)
 	}
 	return gr, nil
