@@ -18,8 +18,8 @@ func main() {
 	var conf config.Server
 	flag.StringVar(&conf.Addr, "addr", "127.0.0.1:7656", "HTTP listen address")
 	flag.StringVar(&conf.PProfURL, "url", "http://127.0.0.1:7656/debug/pprof", "Remote /debug/pprof URL")
-	flag.StringVar(&conf.Local.Root, "local-root", runtime.GOROOT(), "Local project root")
-	flag.StringVar(&conf.Local.GoRoot, "local-goroot", "", "Local GOROOT")
+	flag.StringVar(&conf.Local.Root, "local-root", workDir(), "Local project root")
+	flag.StringVar(&conf.Local.GoRoot, "local-goroot", runtime.GOROOT(), "Local GOROOT")
 	flag.StringVar(&conf.Local.GoPath, "local-gopath", os.Getenv("GOPATH"), "Local GOPATH")
 	flag.StringVar(&conf.Remote.Root, "remote-root", "", "Remote project root")
 	flag.StringVar(&conf.Remote.GoRoot, "remote-goroot", "", "Remote GOROOT")
@@ -30,4 +30,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func workDir() string {
+	wd, _ := os.Getwd()
+	return wd
 }

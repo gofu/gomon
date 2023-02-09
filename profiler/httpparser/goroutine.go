@@ -105,21 +105,7 @@ func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 		if len(matches) != 4 {
 			return gr, fmt.Errorf("invalid goroutine file: %s", s.Text())
 		}
-		if strings.HasPrefix(matches[1], p.Root) {
-			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.Root), "/")
-			stack.Root = profiler.RootTypeProject
-		} else if strings.HasPrefix(matches[1], p.GoRoot) {
-			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoRoot), "/")
-			stack.Root = profiler.RootTypeGoRoot
-		} else if strings.HasPrefix(matches[1], p.GoPath) {
-			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoPath), "/")
-			stack.Root = profiler.RootTypeGoPath
-		} else if strings.HasPrefix(matches[1], "_cgo_") {
-			stack.File = matches[1]
-			stack.Root = profiler.RootTypeCGo
-		} else {
-			return gr, fmt.Errorf("unknown component path: %q", matches[1])
-		}
+		stack.Root, stack.File, err = p.Env.ParseFile(matches[1])
 		stack.Line, err = strconv.Atoi(matches[2])
 		if err != nil {
 			return gr, fmt.Errorf("invalid goroutine line: %s", matches[2])

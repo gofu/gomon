@@ -52,6 +52,10 @@
             color: #a9a9a9;
         }
 
+        .go-method {
+            color: #c28e55;
+        }
+
         .go-file {
             color: #fff;
             background: transparent;
@@ -148,7 +152,7 @@
         <span class="go-duration">{{.Duration}}</span>
         {{range $i,$stack:= .CallStack}}
         <fieldset class="go-root go-root-{{.Root}}">
-            <legend><span class="go-package">{{.Package}}.</span>{{.Method}}
+            <legend><span class="go-package">{{.Package}}.</span><span class="go-method">{{.Method}}</span>
                 <span class="go-root-label go-root-label-{{.Root}}">{{.Root}}</span>
                 {{if and (eq $i 0) (not .Caller)}}
                     <span class="go-line">Main goroutine!</span>
