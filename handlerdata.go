@@ -2,9 +2,7 @@ package gomon
 
 import (
 	"context"
-	"path"
 	"runtime"
-	"time"
 
 	"golang.org/x/exp/constraints"
 	"golang.org/x/sync/errgroup"
@@ -32,37 +30,26 @@ func fibSlice[T constraints.Integer | constraints.Float](count int, multiplier T
 	return elems
 }
 
-type envHighlighter struct {
-	env EnvConfig
-	Highlighter
-}
-
-// highlight stack element, ie. current file and line, and surrounding lines.
-func (h *envHighlighter) highlight(root RootType, file string, hl *Highlight) error {
-	file = path.Join(EnvRoot(h.env, root), file)
-	return h.Highlighter.Highlight(hl, file)
-}
-
 // markupGoroutines fills highlight data for up to markupLimit goroutines.
-func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter *envHighlighter, markupLimit, wrapSize int) error {
+func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter Highlighter, options MarkupOptions) error {
+	opts := HighlightOptions{WrapSize: options.Lines}
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(runtime.NumCPU())
 	var err error
-	for i, goroutine := range goroutines {
-		if markupLimit != 0 && i > markupLimit {
+	for i, gr := range goroutines {
+		if options.MarkupLimit != 0 && i >= options.MarkupLimit {
 			break
 		}
-		goroutine := goroutine
+		gr := gr
 		g.Go(func() error {
-			for j := range goroutine.Stack {
+			for j := range gr.Stack {
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
 				default:
 				}
-				s := &goroutine.Stack[j]
-				s.WrapSize = wrapSize
-				err = highlighter.highlight(s.Root, s.File, &s.Highlight)
+				s := &gr.Stack[j]
+				err = highlighter.Highlight(s.FileInfo, opts, &s.Highlight)
 				if err != nil {
 					return err
 				}
@@ -71,19 +58,4 @@ func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter *
 		})
 	}
 	return g.Wait()
-}
-
-func filterGoroutines(running []Goroutine, minDuration time.Duration) (filtered []Goroutine, skipped int) {
-	if minDuration > 0 {
-		for _, gr := range running {
-			if gr.Duration < minDuration {
-				skipped++
-				continue
-			}
-			filtered = append(filtered, gr)
-		}
-	} else {
-		filtered = running
-	}
-	return
 }

@@ -22,3 +22,17 @@ func (c EnvConfig) WithDefaults(conf EnvConfig) EnvConfig {
 	}
 	return c
 }
+
+// RootOfType returns the corresponding root of type t from env.
+func (c EnvConfig) RootOfType(t RootType) string {
+	switch t {
+	case RootTypeProject:
+		return c.Root
+	case RootTypeGoRoot:
+		return c.GoRoot
+	case RootTypeGoPath:
+		return c.GoPath
+	default:
+		return ""
+	}
+}

@@ -16,12 +16,12 @@ import (
 
 type Handler struct {
 	provider    Profiler
-	highlighter envHighlighter
+	highlighter FSHighlighter
 }
 
 func NewHandler(env EnvConfig, profiler Profiler) *Handler {
 	h := &Handler{provider: profiler}
-	h.highlighter.env = env
+	h.highlighter.Env = env
 	return h
 }
 
@@ -45,24 +45,30 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	serveTemplate(w, r, indexTpl, data)
 }
 
+var (
+	indexDurations = fibSlice(20, time.Minute)
+	indexMarkups   = fibSlice(10, 1)
+	indexContexts  = indexMarkups
+)
+
 func (h *Handler) execIndex(ctx context.Context, query url.Values) (IndexData, error) {
 	data := IndexData{
-		Durations: fibSlice(20, time.Minute),
-		Markups:   fibSlice(10, 1),
-		Contexts:  fibSlice(10, 1),
+		Durations: indexDurations,
+		Markups:   indexMarkups,
+		Contexts:  indexContexts,
 	}
 	running, err := h.goroutines()
 	if err != nil {
 		return data, err
 	}
-	data.Running, data.Skipped = filterGoroutines(running, data.Min)
 	data.Total = len(running)
 	data.RequestData, err = ParseRequestData(query)
 	if err != nil {
 		return data, err
 	}
+	data.Running, data.Skipped = data.GoroutineFilter.Filter(running)
 	if data.Lines >= 0 {
-		err = markupGoroutines(ctx, data.Running, &h.highlighter, data.MarkupLimit, data.Lines)
+		err = markupGoroutines(ctx, data.Running, &h.highlighter, data.MarkupOptions)
 		if err != nil {
 			return data, err
 		}

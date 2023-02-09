@@ -18,29 +18,15 @@ const (
 	RootTypeCGo RootType = "CGO"
 )
 
-// EnvRoot returns the corresponding root path from env.
-func EnvRoot(env EnvConfig, t RootType) string {
-	switch t {
-	case RootTypeProject:
-		return env.Root
-	case RootTypeGoRoot:
-		return env.GoRoot
-	case RootTypeGoPath:
-		return env.GoPath
-	default:
-		return ""
-	}
-}
-
+// StackElem contains a running goroutine's caller stack info.
 type StackElem struct {
-	Caller    bool     `json:"caller"`
-	Package   string   `json:"package"`
-	Method    string   `json:"method"`
-	Args      string   `json:"args,omitempty"`
-	File      string   `json:"file"`
-	ShortFile string   `json:"shortFile"`
-	Root      RootType `json:"root,omitempty"`
-	Extra     string   `json:"extra,omitempty"`
+	Caller    bool   `json:"caller"`
+	Package   string `json:"package"`
+	Method    string `json:"method"`
+	Args      string `json:"args,omitempty"`
+	ShortFile string `json:"shortFile"`
+	Extra     string `json:"extra,omitempty"`
+	FileInfo
 	Highlight
 }
 

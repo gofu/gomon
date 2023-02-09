@@ -18,9 +18,44 @@ var (
 	}).Parse(indexTplData))
 )
 
-type RequestData struct {
-	// Min duration of goroutines to show.
-	Min time.Duration
+type GoroutineFilter struct {
+	// MinDuration duration of goroutines to show.
+	MinDuration time.Duration
+	// MaxDuration duration of goroutines to show.
+	MaxDuration time.Duration
+}
+
+func (f GoroutineFilter) IncludeAll() bool {
+	return f.MinDuration == 0 && f.MaxDuration == 0
+}
+
+func (f GoroutineFilter) Include(gr Goroutine) bool {
+	if f.MinDuration != 0 && gr.Duration < f.MinDuration {
+		return false
+	}
+	if f.MaxDuration != 0 && gr.Duration > f.MaxDuration {
+		return false
+	}
+	return true
+}
+
+func (f GoroutineFilter) Filter(running []Goroutine) ([]Goroutine, int) {
+	var skipped int
+	if f.IncludeAll() {
+		return running, 0
+	}
+	var filtered []Goroutine
+	for _, gr := range running {
+		if !f.Include(gr) {
+			skipped++
+			continue
+		}
+		filtered = append(filtered, gr)
+	}
+	return filtered, skipped
+}
+
+type MarkupOptions struct {
 	// MarkupLimit is the max number of highlighted goroutines.
 	MarkupLimit int
 	// Lines to include before and after the current line.
@@ -28,12 +63,23 @@ type RequestData struct {
 	Lines int
 }
 
+type RequestData struct {
+	GoroutineFilter
+	MarkupOptions
+}
+
 func ParseRequestData(query url.Values) (RequestData, error) {
 	var data RequestData
 	var errs []error
 	var err error
 	if min := query.Get("min"); len(min) != 0 {
-		data.Min, err = time.ParseDuration(min)
+		data.MinDuration, err = time.ParseDuration(min)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if max := query.Get("max"); len(max) != 0 {
+		data.MaxDuration, err = time.ParseDuration(max)
 		if err != nil {
 			errs = append(errs, err)
 		}

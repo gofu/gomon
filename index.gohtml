@@ -105,9 +105,17 @@
             {{end}}
             <label>Filter by minimum duration:
                 <select name="min" onchange="this.form.submit()">
-                    <option value="">All</option>
+                    <option value=""></option>
                     {{range $dur := .Durations}}
-                        <option {{if eq $.Min $dur}}selected{{end}}>{{$dur}}</option>
+                        <option {{if eq $.MinDuration $dur}}selected{{end}}>{{$dur}}</option>
+                    {{end}}
+                </select>,
+            </label>
+            <label> maximum duration:
+                <select name="max" onchange="this.form.submit()">
+                    <option value=""></option>
+                    {{range $dur := .Durations}}
+                        <option {{if eq $.MaxDuration $dur}}selected{{end}}>{{$dur}}</option>
                     {{end}}
                 </select>
             </label>

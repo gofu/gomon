@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"sync"
 
 	"github.com/alecthomas/chroma"
@@ -12,10 +13,15 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-// Highlighter uses single-flight to lock filesystem reading/highlighting
+type Highlighter interface {
+	Highlight(FileInfo, HighlightOptions, *Highlight) error
+}
+
+// FSHighlighter uses single-flight to lock filesystem reading/highlighting
 // from multiple goroutines, and caches highlighted file source.
-type Highlighter struct {
+type FSHighlighter struct {
 	FS    fs.FS
+	Env   EnvConfig
 	mu    sync.RWMutex
 	sf    singleflight.Group
 	cache map[string][]chroma.Token
@@ -25,23 +31,20 @@ type Highlighter struct {
 // If wrapSize==0, then only the current line is highlighted, meaning the
 // suffix is empty. If wrapSize>0, then prefix contains 1+wrapSize lines,
 // while suffix contains wrapSize lines.
-func (h *Highlighter) Highlight(hl *Highlight, file string) error {
-	if hl == nil {
-		return ErrNilHighlight
-	}
-	if hl.WrapSize < 0 {
+func (h *FSHighlighter) Highlight(file FileInfo, opts HighlightOptions, hl *Highlight) error {
+	if opts.WrapSize < 0 {
 		return nil
 	}
-	allTokens, err := h.getTokens(file)
+	allTokens, err := h.getTokens(path.Join(h.Env.RootOfType(file.Root), file.File))
 	if err != nil {
 		return err
 	}
-	return HighlightTokens(hl, allTokens)
+	return HighlightTokens(allTokens, file.Line, opts, hl)
 }
 
 // getTokens returns parsed tokens from source code file,
 // relying on cache and single-flight.
-func (h *Highlighter) getTokens(file string) ([]chroma.Token, error) {
+func (h *FSHighlighter) getTokens(file string) ([]chroma.Token, error) {
 	h.mu.RLock()
 	cached, ok := h.cache[file]
 	h.mu.RUnlock()
