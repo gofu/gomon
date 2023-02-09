@@ -2,22 +2,26 @@ package gomon
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
 
 type Handler struct {
 	provider    Profiler
-	highlighter EnvHighlighter
+	highlighter envHighlighter
 }
 
 func NewHandler(env EnvConfig, profiler Profiler) *Handler {
 	h := &Handler{provider: profiler}
-	h.highlighter.Env = env
+	h.highlighter.env = env
 	return h
 }
 
@@ -33,51 +37,41 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
-	running, err := h.provider.Goroutines()
+	data, err := h.execIndex(r.Context(), r.URL.Query())
 	if err != nil {
 		serveError(w, r, err)
 		return
 	}
+	serveTemplate(w, r, indexTpl, data)
+}
+
+func (h *Handler) execIndex(ctx context.Context, query url.Values) (IndexData, error) {
 	data := IndexData{
-		Durations: fibonacciSlice(20, time.Minute),
-		Markups:   fibonacciSlice(10, 1),
-		Contexts:  fibonacciSlice(10, 1),
-		Total:     len(running),
-		Running:   running,
+		Durations: fibSlice(20, time.Minute),
+		Markups:   fibSlice(10, 1),
+		Contexts:  fibSlice(10, 1),
 	}
-	data.RequestData, err = ParseRequestData(r.URL.Query())
+	running, err := h.goroutines()
 	if err != nil {
-		serveError(w, r, err)
-		return
+		return data, err
 	}
-	if data.Min > 0 {
-		var filtered []Goroutine
-		for _, gr := range running {
-			if gr.Duration < data.Min {
-				data.Skipped++
-				continue
-			}
-			filtered = append(filtered, gr)
-		}
-		data.Running = filtered
+	data.Running, data.Skipped = filterGoroutines(running, data.Min)
+	data.Total = len(running)
+	data.RequestData, err = ParseRequestData(query)
+	if err != nil {
+		return data, err
 	}
 	if data.Lines >= 0 {
-		if err = markupGoroutines(r.Context(), data.Running, &h.highlighter, data.MarkupLimit, data.Lines); err != nil {
-			serveError(w, r, err)
-			return
+		err = markupGoroutines(ctx, data.Running, &h.highlighter, data.MarkupLimit, data.Lines)
+		if err != nil {
+			return data, err
 		}
 	}
-	var buf bytes.Buffer
-	if err = indexTpl.Execute(&buf, data); err != nil {
-		serveError(w, r, err)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = buf.WriteTo(w)
+	return data, nil
 }
 
 func (h *Handler) serveJSON(w http.ResponseWriter, r *http.Request) {
-	running, err := h.provider.Goroutines()
+	running, err := h.goroutines()
 	if err != nil {
 		serveError(w, r, err)
 		return
@@ -86,6 +80,23 @@ func (h *Handler) serveJSON(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(running)
+}
+
+func (h *Handler) goroutines() ([]Goroutine, error) {
+	if h.provider == nil {
+		return nil, fmt.Errorf("%T has nil %T", h, h.provider)
+	}
+	return h.provider.Goroutines()
+}
+
+func serveTemplate(w http.ResponseWriter, r *http.Request, tpl *template.Template, data any) {
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, data); err != nil {
+		serveError(w, r, err)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = buf.WriteTo(w)
 }
 
 func serveError(w http.ResponseWriter, r *http.Request, err error) {

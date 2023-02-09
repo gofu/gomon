@@ -4,16 +4,22 @@ import (
 	"time"
 )
 
+// RootType distinguishes Go source code roots.
 type RootType string
 
 const (
+	// RootTypeProject represents project root.
 	RootTypeProject RootType = "PROJECT"
-	RootTypeGoRoot  RootType = "GOROOT"
-	RootTypeGoPath  RootType = "GOPATH"
-	RootTypeCGo     RootType = "CGO"
+	// RootTypeGoRoot represents GOROOT.
+	RootTypeGoRoot RootType = "GOROOT"
+	// RootTypeGoPath represents GOPATH.
+	RootTypeGoPath RootType = "GOPATH"
+	// RootTypeCGo represents linked CGO.
+	RootTypeCGo RootType = "CGO"
 )
 
-func (t RootType) FromEnv(env EnvConfig) string {
+// EnvRoot returns the corresponding root path from env.
+func EnvRoot(env EnvConfig, t RootType) string {
 	switch t {
 	case RootTypeProject:
 		return env.Root
@@ -33,7 +39,6 @@ type StackElem struct {
 	Args      string   `json:"args,omitempty"`
 	File      string   `json:"file"`
 	ShortFile string   `json:"shortFile"`
-	Line      int      `json:"line"`
 	Root      RootType `json:"root,omitempty"`
 	Extra     string   `json:"extra,omitempty"`
 	Highlight

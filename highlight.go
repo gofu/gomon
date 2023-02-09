@@ -19,8 +19,8 @@ var ErrNilHighlight = fmt.Errorf("cannot highlight nil %T", (*Highlight)(nil))
 
 // Highlight HTML contains a source code segment.
 type Highlight struct {
-	// HighlightLine number, starting from 1.
-	HighlightLine int `json:"highlightLine"`
+	// Line number, starting from 1.
+	Line int `json:"line"`
 	// WrapSize is the number of lines preceding/succeeding the current line.
 	// If negative, then both Prefix and Suffix are empty.
 	WrapSize int `json:"wrapSize"`
@@ -40,7 +40,7 @@ func HighlightTokens(hl *Highlight, allTokens []chroma.Token) error {
 	var tokens []chroma.Token
 	var buf bytes.Buffer
 	base := 1
-	if wrapDiff := hl.HighlightLine - hl.WrapSize; wrapDiff > 0 {
+	if wrapDiff := hl.Line - hl.WrapSize; wrapDiff > 0 {
 		base = wrapDiff
 	}
 	makeFormatter := func(baseLine, mark int) chroma.Formatter {
@@ -57,12 +57,12 @@ func HighlightTokens(hl *Highlight, allTokens []chroma.Token) error {
 		}
 		return html.New(opts...)
 	}
-	skipLines := hl.HighlightLine - 1 - hl.WrapSize
+	skipLines := hl.Line - 1 - hl.WrapSize
 	if skipLines < 0 {
 		skipLines = 0
 	}
-	stopAtLine := hl.HighlightLine - 1 + hl.WrapSize
-	formatter := makeFormatter(base, hl.HighlightLine)
+	stopAtLine := hl.Line - 1 + hl.WrapSize
+	formatter := makeFormatter(base, hl.Line)
 	var gotPrefix bool
 	var haveLines int
 	setSuffix := func() error {
@@ -84,7 +84,7 @@ func HighlightTokens(hl *Highlight, allTokens []chroma.Token) error {
 			haveLines += lfCount
 			continue
 		}
-		if haveLines+lfCount >= hl.HighlightLine && !gotPrefix {
+		if haveLines+lfCount >= hl.Line && !gotPrefix {
 			haveLines += lfCount
 			tokens = appendToken(tokens, tok, 0)
 			buf.Reset()
@@ -98,7 +98,7 @@ func HighlightTokens(hl *Highlight, allTokens []chroma.Token) error {
 			if hl.WrapSize <= 0 {
 				break
 			}
-			formatter = makeFormatter(hl.HighlightLine+1, 0)
+			formatter = makeFormatter(hl.Line+1, 0)
 			continue
 		}
 		if haveLines+lfCount > stopAtLine {

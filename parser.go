@@ -11,13 +11,15 @@ import (
 	"time"
 )
 
+// PProfParser parses the output of /debug/pprof/goroutine?debug=2 page.
 type PProfParser struct {
 	EnvConfig
 }
 
+// Parse the output of /debug/pprof/goroutine?debug=2 page and returns goroutine info.
 func (p PProfParser) Parse(r io.Reader) ([]Goroutine, error) {
 	s := bufio.NewScanner(r)
-	s.Split(scanDoubleLines)
+	s.Split(ScanDoubleLines)
 	var gs []Goroutine
 	for s.Scan() {
 		goroutine, err := p.parseGoroutine(s.Text())
@@ -133,7 +135,8 @@ func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
 	return gr, nil
 }
 
-func scanDoubleLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// ScanDoubleLines is a copy of bufio.ScanLines that splits at \n\n.
+func ScanDoubleLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}

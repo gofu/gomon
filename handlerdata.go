@@ -2,73 +2,22 @@ package gomon
 
 import (
 	"context"
-	_ "embed"
-	"html/template"
-	"net/url"
 	"path"
 	"runtime"
-	"strconv"
 	"time"
 
 	"golang.org/x/exp/constraints"
 	"golang.org/x/sync/errgroup"
 )
 
-var (
-	//go:embed index.gohtml
-	indexTplData string
-	indexTpl     = template.Must(template.New("").Funcs(template.FuncMap{
-		"revIndex": func(index, length int) (revIndex int) { return (length - 1) - index },
-		"sub":      func(a, b int) int { return a - b },
-		"rawHTML":  func(s string) template.HTML { return template.HTML(s) },
-	}).Parse(indexTplData))
-)
-
-type RequestData struct {
-	Min         time.Duration
-	MarkupLimit int
-	Lines       int
-}
-
-func ParseRequestData(query url.Values) (RequestData, error) {
-	var data RequestData
-	var errs []error
-	var err error
-	if min := query.Get("min"); len(min) != 0 {
-		data.Min, err = time.ParseDuration(min)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if markupLimit := query.Get("markup"); len(markupLimit) != 0 {
-		data.MarkupLimit, err = strconv.Atoi(markupLimit)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if linesStr := query.Get("lines"); len(linesStr) != 0 {
-		data.Lines, err = strconv.Atoi(linesStr)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if len(errs) == 0 {
-		return data, nil
-	}
-	return data, errs[0] // until errors.Join
-}
-
-type IndexData struct {
-	RequestData
-	Durations []time.Duration
-	Markups   []int
-	Contexts  []int
-	Total     int
-	Running   []Goroutine
-	Skipped   int
-}
-
-func fibonacciSlice[T constraints.Integer | constraints.Float](count int, multiplier T) []T {
+// fibSlice returns a slice of count elements, where every next element is
+// multiplied by its fibonacci order.
+//
+// Example:
+//
+//	fibSlice[int](5, 1) // []int{1,2,3,5,8}
+//	fibSlice[int](5, 2) // []int{2,4,6,10,16}
+func fibSlice[T constraints.Integer | constraints.Float](count int, multiplier T) []T {
 	elems := make([]T, count)
 	for i := 0; i < count; i++ {
 		switch i {
@@ -83,16 +32,19 @@ func fibonacciSlice[T constraints.Integer | constraints.Float](count int, multip
 	return elems
 }
 
-type EnvHighlighter struct {
-	Env EnvConfig
+type envHighlighter struct {
+	env EnvConfig
 	Highlighter
 }
 
-func (h *EnvHighlighter) Highlight(elem *StackElem) error {
-	return h.Highlighter.Highlight(&elem.Highlight, path.Join(elem.Root.FromEnv(h.Env), elem.File))
+// highlight stack element, ie. current file and line, and surrounding lines.
+func (h *envHighlighter) highlight(root RootType, file string, hl *Highlight) error {
+	file = path.Join(EnvRoot(h.env, root), file)
+	return h.Highlighter.Highlight(hl, file)
 }
 
-func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter *EnvHighlighter, markupLimit, wrapSize int) error {
+// markupGoroutines fills highlight data for up to markupLimit goroutines.
+func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter *envHighlighter, markupLimit, wrapSize int) error {
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(runtime.NumCPU())
 	var err error
@@ -109,9 +61,8 @@ func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter *
 				default:
 				}
 				s := &goroutine.Stack[j]
-				s.HighlightLine = s.Line
 				s.WrapSize = wrapSize
-				err = highlighter.Highlight(s)
+				err = highlighter.highlight(s.Root, s.File, &s.Highlight)
 				if err != nil {
 					return err
 				}
@@ -120,4 +71,19 @@ func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter *
 		})
 	}
 	return g.Wait()
+}
+
+func filterGoroutines(running []Goroutine, minDuration time.Duration) (filtered []Goroutine, skipped int) {
+	if minDuration > 0 {
+		for _, gr := range running {
+			if gr.Duration < minDuration {
+				skipped++
+				continue
+			}
+			filtered = append(filtered, gr)
+		}
+	} else {
+		filtered = running
+	}
+	return
 }
