@@ -150,12 +150,12 @@
                 {{end}}
             </legend>
             <div>
-                {{.Prefix}}
+                {{rawHTML .Prefix}}
                 {{end}}
                 {{$stack := .Stack}}
                 {{$stackLen := len $stack}}
                 {{range $i, $v := .Stack}}
-                {{(index $stack (revIndex $i $stackLen)).Suffix}}
+                {{rawHTML (index $stack (revIndex $i $stackLen)).Suffix}}
             </div>
         </fieldset>
         {{end}}

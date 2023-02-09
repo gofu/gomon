@@ -1,13 +1,17 @@
 package gomon
 
 import (
+	"context"
 	_ "embed"
 	"html/template"
 	"net/url"
+	"path"
+	"runtime"
 	"strconv"
 	"time"
 
 	"golang.org/x/exp/constraints"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -16,6 +20,7 @@ var (
 	indexTpl     = template.Must(template.New("").Funcs(template.FuncMap{
 		"revIndex": func(index, length int) (revIndex int) { return (length - 1) - index },
 		"sub":      func(a, b int) int { return a - b },
+		"rawHTML":  func(s string) template.HTML { return template.HTML(s) },
 	}).Parse(indexTplData))
 )
 
@@ -76,4 +81,43 @@ func fibonacciSlice[T constraints.Integer | constraints.Float](count int, multip
 		}
 	}
 	return elems
+}
+
+type EnvHighlighter struct {
+	Env EnvConfig
+	Highlighter
+}
+
+func (h *EnvHighlighter) Highlight(elem *StackElem) error {
+	return h.Highlighter.Highlight(&elem.Highlight, path.Join(elem.Root.FromEnv(h.Env), elem.File))
+}
+
+func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter *EnvHighlighter, markupLimit, wrapSize int) error {
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(runtime.NumCPU())
+	var err error
+	for i, goroutine := range goroutines {
+		if markupLimit != 0 && i > markupLimit {
+			break
+		}
+		goroutine := goroutine
+		g.Go(func() error {
+			for j := range goroutine.Stack {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+				}
+				s := &goroutine.Stack[j]
+				s.HighlightLine = s.Line
+				s.WrapSize = wrapSize
+				err = highlighter.Highlight(s)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	}
+	return g.Wait()
 }

@@ -11,11 +11,11 @@ import (
 	"time"
 )
 
-type Parser struct {
+type PProfParser struct {
 	EnvConfig
 }
 
-func (p Parser) parseGoroutines(r io.Reader) ([]Goroutine, error) {
+func (p PProfParser) Parse(r io.Reader) ([]Goroutine, error) {
 	s := bufio.NewScanner(r)
 	s.Split(scanDoubleLines)
 	var gs []Goroutine
@@ -39,7 +39,7 @@ var (
 	goroutineFileRegexp = regexp.MustCompile(`^\t(.*):(\d+)(?: (.*?))?$`)
 )
 
-func (p Parser) parseGoroutine(data string) (Goroutine, error) {
+func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
 	s := bufio.NewScanner(strings.NewReader(data))
 	var gr Goroutine
 	var err error
@@ -101,19 +101,19 @@ func (p Parser) parseGoroutine(data string) (Goroutine, error) {
 		if strings.HasPrefix(matches[1], p.Root) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.Root), "/")
 			stack.ShortFile = stack.File
-			stack.Root = "PROJECT"
+			stack.Root = RootTypeProject
 		} else if strings.HasPrefix(matches[1], p.GoRoot) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoRoot), "/")
 			stack.ShortFile = strings.TrimPrefix(stack.File, "src/")
-			stack.Root = "GOROOT"
+			stack.Root = RootTypeGoRoot
 		} else if strings.HasPrefix(matches[1], p.GoPath) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoPath), "/")
 			stack.ShortFile = strings.TrimPrefix(stack.File, "pkg/")
 			stack.ShortFile = strings.TrimPrefix(stack.ShortFile, "mod/")
-			stack.Root = "GOPATH"
+			stack.Root = RootTypeGoPath
 		} else if strings.HasPrefix(matches[1], "_cgo_") {
 			stack.File = matches[1]
-			stack.Root = "CGO"
+			stack.Root = RootTypeCGo
 		} else {
 			return gr, fmt.Errorf("unknown component path: %q", matches[1])
 		}

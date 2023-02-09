@@ -3,23 +3,22 @@ package gomon
 import (
 	"bytes"
 	"encoding/json"
-	"html/template"
 	"io"
 	"log"
 	"net/http"
-	"path"
 	"strings"
 	"time"
 )
 
 type Handler struct {
-	env         EnvConfig
-	provider    GoroutineProvider
-	highlighter Highlighter
+	provider    Profiler
+	highlighter EnvHighlighter
 }
 
-func NewHandler(env EnvConfig, provider GoroutineProvider) *Handler {
-	return &Handler{env: env, provider: provider}
+func NewHandler(env EnvConfig, profiler Profiler) *Handler {
+	h := &Handler{provider: profiler}
+	h.highlighter.Env = env
+	return h
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -34,9 +33,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
-	running, err := h.provider.GetRunning()
+	running, err := h.provider.Goroutines()
 	if err != nil {
-		h.serveError(w, r, err)
+		serveError(w, r, err)
 		return
 	}
 	data := IndexData{
@@ -48,7 +47,7 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	}
 	data.RequestData, err = ParseRequestData(r.URL.Query())
 	if err != nil {
-		h.serveError(w, r, err)
+		serveError(w, r, err)
 		return
 	}
 	if data.Min > 0 {
@@ -63,24 +62,14 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 		data.Running = filtered
 	}
 	if data.Lines >= 0 {
-		for i, goroutine := range data.Running {
-			if data.MarkupLimit != 0 && i > data.MarkupLimit {
-				break
-			}
-			for j, s := range goroutine.Stack {
-				hh, err := h.highlightStack(s, data.Lines)
-				if err != nil {
-					h.serveError(w, r, err)
-					return
-				}
-				goroutine.Stack[j].Prefix = template.HTML(hh.Prefix)
-				goroutine.Stack[j].Suffix = template.HTML(hh.Suffix)
-			}
+		if err = markupGoroutines(r.Context(), data.Running, &h.highlighter, data.MarkupLimit, data.Lines); err != nil {
+			serveError(w, r, err)
+			return
 		}
 	}
 	var buf bytes.Buffer
 	if err = indexTpl.Execute(&buf, data); err != nil {
-		h.serveError(w, r, err)
+		serveError(w, r, err)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -88,9 +77,9 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) serveJSON(w http.ResponseWriter, r *http.Request) {
-	running, err := h.provider.GetRunning()
+	running, err := h.provider.Goroutines()
 	if err != nil {
-		h.serveError(w, r, err)
+		serveError(w, r, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -99,29 +88,7 @@ func (h *Handler) serveJSON(w http.ResponseWriter, r *http.Request) {
 	_ = enc.Encode(running)
 }
 
-func (h *Handler) highlightStack(s StackElem, wrap int) (Highlight, error) {
-	if wrap < 0 {
-		return Highlight{}, nil
-	}
-	var root string
-	switch s.Root {
-	case "PROJECT":
-		root = h.env.Root
-	case "GOROOT":
-		root = h.env.GoRoot
-	case "GOPATH":
-		root = h.env.GoPath
-	default:
-		return Highlight{}, nil
-	}
-	hh, err := h.highlighter.Highlight(path.Join(root, s.File), s.Line, wrap)
-	if err != nil {
-		return hh, err
-	}
-	return hh, nil
-}
-
-func (h *Handler) serveError(w http.ResponseWriter, r *http.Request, err error) {
+func serveError(w http.ResponseWriter, r *http.Request, err error) {
 	log.Printf("HTTP %s %s error: %s", r.Method, r.URL, err)
 	_, _ = io.Copy(w, strings.NewReader(err.Error()))
 }

@@ -3,6 +3,8 @@ package gomon
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"strings"
 	"sync"
@@ -13,30 +15,32 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-type Highlighter struct {
-	mu    sync.RWMutex
-	sf    singleflight.Group
-	cache map[string][]chroma.Token
-}
+var ErrNilHighlight = fmt.Errorf("cannot highlight nil %T", (*Highlight)(nil))
 
+// Highlight HTML contains a source code segment.
 type Highlight struct {
-	Prefix string
-	Suffix string
+	// HighlightLine number, starting from 1.
+	HighlightLine int `json:"highlightLine"`
+	// WrapSize is the number of lines preceding/succeeding the current line.
+	// If negative, then both Prefix and Suffix are empty.
+	WrapSize int `json:"wrapSize"`
+	// Prefix HTML contains the current line, and WrapSize lines preceding it.
+	Prefix string `json:"prefix,omitempty"`
+	// Suffix HTML contains WrapSize lines succeeding the current line.
+	Suffix string `json:"suffix,omitempty"`
 }
 
-func (h *Highlighter) Highlight(file string, line, wrapSize int) (Highlight, error) {
-	var hh Highlight
-	if wrapSize < 0 {
-		return hh, nil
+func HighlightTokens(hl *Highlight, allTokens []chroma.Token) error {
+	if hl == nil {
+		return ErrNilHighlight
 	}
-	allTokens, err := h.getTokens(file)
-	if err != nil {
-		return hh, err
+	if hl.WrapSize < 0 {
+		return nil
 	}
 	var tokens []chroma.Token
 	var buf bytes.Buffer
 	base := 1
-	if wrapDiff := line - wrapSize; wrapDiff > 0 {
+	if wrapDiff := hl.HighlightLine - hl.WrapSize; wrapDiff > 0 {
 		base = wrapDiff
 	}
 	makeFormatter := func(baseLine, mark int) chroma.Formatter {
@@ -53,12 +57,12 @@ func (h *Highlighter) Highlight(file string, line, wrapSize int) (Highlight, err
 		}
 		return html.New(opts...)
 	}
-	skipLines := line - 1 - wrapSize
+	skipLines := hl.HighlightLine - 1 - hl.WrapSize
 	if skipLines < 0 {
 		skipLines = 0
 	}
-	stopAtLine := line - 1 + wrapSize
-	formatter := makeFormatter(base, line)
+	stopAtLine := hl.HighlightLine - 1 + hl.WrapSize
+	formatter := makeFormatter(base, hl.HighlightLine)
 	var gotPrefix bool
 	var haveLines int
 	setSuffix := func() error {
@@ -66,11 +70,11 @@ func (h *Highlighter) Highlight(file string, line, wrapSize int) (Highlight, err
 			return nil
 		}
 		buf.Reset()
-		err = formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
+		err := formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
 		if err != nil {
 			return err
 		}
-		hh.Suffix = buf.String()
+		hl.Suffix = buf.String()
 		tokens = tokens[:0]
 		return nil
 	}
@@ -80,34 +84,34 @@ func (h *Highlighter) Highlight(file string, line, wrapSize int) (Highlight, err
 			haveLines += lfCount
 			continue
 		}
-		if haveLines+lfCount >= line && !gotPrefix {
+		if haveLines+lfCount >= hl.HighlightLine && !gotPrefix {
 			haveLines += lfCount
 			tokens = appendToken(tokens, tok, 0)
 			buf.Reset()
-			err = formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
+			err := formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
 			if err != nil {
-				return hh, err
+				return err
 			}
 			gotPrefix = true
 			tokens = tokens[:0]
-			hh.Prefix = buf.String()
-			if wrapSize <= 0 {
+			hl.Prefix = buf.String()
+			if hl.WrapSize <= 0 {
 				break
 			}
-			formatter = makeFormatter(line+1, 0)
+			formatter = makeFormatter(hl.HighlightLine+1, 0)
 			continue
 		}
 		if haveLines+lfCount > stopAtLine {
 			tokens = appendToken(tokens, tok, 0)
-			if err = setSuffix(); err != nil {
-				return hh, err
+			if err := setSuffix(); err != nil {
+				return err
 			}
 			break
 		}
 		tokens = appendToken(tokens, tok, skipLines-haveLines)
 		haveLines += lfCount
 	}
-	return hh, setSuffix()
+	return setSuffix()
 }
 
 func appendToken(tokens []chroma.Token, tok chroma.Token, overflow int) []chroma.Token {
@@ -117,6 +121,35 @@ func appendToken(tokens []chroma.Token, tok chroma.Token, overflow int) []chroma
 	return append(tokens, tok)
 }
 
+// Highlighter uses single-flight to lock filesystem reading/highlighting
+// from multiple goroutines, and caches highlighted file source.
+type Highlighter struct {
+	FS    fs.FS
+	mu    sync.RWMutex
+	sf    singleflight.Group
+	cache map[string][]chroma.Token
+}
+
+// Highlight source file/line with HTML. If wrapSize<0, no HTML is returned.
+// If wrapSize==0, then only the current line is highlighted, meaning the
+// suffix is empty. If wrapSize>0, then prefix contains 1+wrapSize lines,
+// while suffix contains wrapSize lines.
+func (h *Highlighter) Highlight(hl *Highlight, file string) error {
+	if hl == nil {
+		return ErrNilHighlight
+	}
+	if hl.WrapSize < 0 {
+		return nil
+	}
+	allTokens, err := h.getTokens(file)
+	if err != nil {
+		return err
+	}
+	return HighlightTokens(hl, allTokens)
+}
+
+// getTokens returns parsed tokens from source code file,
+// relying on cache and single-flight.
 func (h *Highlighter) getTokens(file string) ([]chroma.Token, error) {
 	h.mu.RLock()
 	cached, ok := h.cache[file]
@@ -127,11 +160,12 @@ func (h *Highlighter) getTokens(file string) ([]chroma.Token, error) {
 	v, err, _ := h.sf.Do(file, func() (interface{}, error) {
 		h.mu.RLock()
 		cached, ok := h.cache[file]
+		readFS := h.FS
 		h.mu.RUnlock()
 		if ok {
 			return cached, nil
 		}
-		data, err := os.ReadFile(file)
+		data, err := readFile(readFS, file)
 		if err != nil {
 			return nil, err
 		}
@@ -155,4 +189,17 @@ func (h *Highlighter) getTokens(file string) ([]chroma.Token, error) {
 		return nil, fmt.Errorf("expected cache type %T, got %T", cached, v)
 	}
 	return cached, nil
+}
+
+// readFile reads file content from readFS, or local filesystem if readFS==nil.
+func readFile(readFS fs.FS, file string) ([]byte, error) {
+	if readFS == nil {
+		return os.ReadFile(file)
+	}
+	f, err := readFS.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	return io.ReadAll(f)
 }

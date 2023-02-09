@@ -22,7 +22,7 @@ func StartServer(ctx context.Context, conf ServerConfig) error {
 	}
 	log.Printf("Listening on http://%s", ln.Addr())
 	group, ctx := errgroup.WithContext(ctx)
-	svc := NewHTTPProvider(conf.PProfURL, conf.Remote.WithDefaults(conf.Local))
+	svc := NewHTTPProfiler(conf.PProfURL, conf.Remote.WithDefaults(conf.Local))
 	srv := &http.Server{
 		Addr:              ln.Addr().String(),
 		Handler:           NewServerHandler(conf.Local, svc),
@@ -45,7 +45,9 @@ func StartServer(ctx context.Context, conf ServerConfig) error {
 	return group.Wait()
 }
 
-func NewServerHandler(env EnvConfig, provider GoroutineProvider) *http.ServeMux {
+// NewServerHandler returns an http.Handler that handles /debug/pprof
+// and *Handler requests.
+func NewServerHandler(env EnvConfig, provider Profiler) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
