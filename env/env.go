@@ -62,17 +62,17 @@ func (e Env) ParseFile(file string) (profiler.RootType, string, error) {
 	}
 }
 
-// Normalized runs normalizePaths on each environment path.
+// Normalized runs NormalizePath on each environment path.
 func (e Env) Normalized() Env {
-	e.Root = normalizePath(e.Root)
-	e.GoRoot = normalizePath(e.GoRoot)
-	e.GoPath = normalizePath(e.GoPath)
+	e.Root = NormalizePath(e.Root)
+	e.GoRoot = NormalizePath(e.GoRoot)
+	e.GoPath = NormalizePath(e.GoPath)
 	return e
 }
 
-// normalizePath runs path.Clean on p, replaces backlashes
+// NormalizePath runs path.Clean on p, replaces backlashes
 // with slashes, and appends trailing slash; if len(p)!=0.
-func normalizePath(p string) string {
+func NormalizePath(p string) string {
 	if len(p) == 0 {
 		return ""
 	}
