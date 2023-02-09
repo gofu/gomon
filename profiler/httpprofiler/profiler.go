@@ -1,4 +1,5 @@
-package gomon
+// Package httpprofiler calls remote /debug/pprof pages to provide profiler data.
+package httpprofiler
 
 import (
 	"fmt"
@@ -6,39 +7,43 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+
+	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/profiler"
+	"github.com/gofu/gomon/profiler/httpparser"
 )
 
-// HTTPProfiler parses running goroutines from remote /debug/pprof/ pages.
-type HTTPProfiler struct {
-	pprofURL string
-	parser   PProfParser
+// Profiler parses running goroutines from remote /debug/pprof/ pages.
+type Profiler struct {
+	url    string
+	parser httpparser.Goroutine
 }
 
-// NewHTTPProfiler expects pprofURL to be a default /debug/pprof/ page.
+// New expects pprofURL to be a default /debug/pprof/ page.
 // The env defines file path prefixes for the parser, to group them
 // by their defining package group (source, GOROOT, GOPATH).
-func NewHTTPProfiler(pprofURL string, env EnvConfig) *HTTPProfiler {
+func New(pprofURL string, env config.Env) *Profiler {
 	pprofURL = strings.TrimRight(pprofURL, "/")
 	if len(pprofURL) != 0 && !strings.Contains(pprofURL, "://") {
 		pprofURL = "http://" + pprofURL
 	}
-	return &HTTPProfiler{
-		pprofURL: pprofURL,
-		parser:   PProfParser{EnvConfig: env},
+	return &Profiler{
+		url:    pprofURL,
+		parser: httpparser.Goroutine{Env: env},
 	}
 }
 
 // Goroutines parses running goroutines from remote URL.
-func (s *HTTPProfiler) Goroutines() ([]Goroutine, error) {
-	uri := "/goroutine?debug=2"
-	res, err := s.request(uri)
+func (s *Profiler) Goroutines() ([]profiler.Goroutine, error) {
+	uri := s.url + "/goroutine?debug=2"
+	res, err := request(uri)
 	if err != nil {
 		return nil, err
 	}
 	running, err := s.parser.Parse(res)
 	_ = res.Close()
 	if err != nil {
-		return nil, fmt.Errorf("read %s response: %w", s.pprofURL+uri, err)
+		return nil, fmt.Errorf("read %s response: %w", s.url+uri, err)
 	}
 	sort.Slice(running, func(i, j int) bool {
 		if len(running[i].Stack) > 0 && !running[i].Stack[0].Caller {
@@ -50,8 +55,7 @@ func (s *HTTPProfiler) Goroutines() ([]Goroutine, error) {
 }
 
 // request calls uri relative to /debug/pprof page, and returns non-closed HTTP body.
-func (s *HTTPProfiler) request(uri string) (io.ReadCloser, error) {
-	uri = s.pprofURL + uri
+func request(uri string) (io.ReadCloser, error) {
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err

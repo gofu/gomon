@@ -1,4 +1,5 @@
-package gomon
+// Package highlight contains functionality to highlight source code via styled HTML.
+package highlight
 
 import (
 	"bytes"
@@ -7,34 +8,23 @@ import (
 
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters/html"
+	"github.com/gofu/gomon/profiler"
+	"github.com/gofu/gomon/style"
 )
 
-type FileInfo struct {
-	// Root of the calling file.
-	Root RootType `json:"root"`
-	// File path, relative to Root.
-	File string `json:"file"`
-	// Line number, starting from 1.
-	Line int `json:"line"`
+type Highlighter interface {
+	Highlight(profiler.FileLine, Options, *profiler.Highlight) error
 }
 
-// Highlight HTML contains a source code segment.
-type Highlight struct {
-	// Prefix HTML contains the current line, and WrapSize lines preceding it.
-	Prefix string `json:"prefix,omitempty"`
-	// Suffix HTML contains WrapSize lines succeeding the current line.
-	Suffix string `json:"suffix,omitempty"`
-}
-
-type HighlightOptions struct {
+type Options struct {
 	// WrapSize is the number of lines preceding/succeeding the current line.
 	// Negative number disables highlight.
 	WrapSize int `json:"wrapSize"`
 }
 
-func HighlightTokens(allTokens []chroma.Token, line int, opts HighlightOptions, hl *Highlight) error {
+func Tokens(allTokens []chroma.Token, line int, opts Options, hl *profiler.Highlight) error {
 	if hl == nil {
-		return fmt.Errorf("cannot highlight nil %T", (*Highlight)(nil))
+		return fmt.Errorf("cannot highlight nil %T", hl)
 	}
 	wrapSize := opts.WrapSize
 	if wrapSize < 0 {
@@ -73,7 +63,7 @@ func HighlightTokens(allTokens []chroma.Token, line int, opts HighlightOptions, 
 			return nil
 		}
 		buf.Reset()
-		err := formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
+		err := formatter.Format(&buf, style.Vulcan, chroma.Literator(tokens...))
 		if err != nil {
 			return err
 		}
@@ -91,7 +81,7 @@ func HighlightTokens(allTokens []chroma.Token, line int, opts HighlightOptions, 
 			haveLines += lfCount
 			tokens = append(tokens, tok)
 			buf.Reset()
-			err := formatter.Format(&buf, Vulcan, chroma.Literator(tokens...))
+			err := formatter.Format(&buf, style.Vulcan, chroma.Literator(tokens...))
 			if err != nil {
 				return err
 			}

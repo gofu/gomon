@@ -10,11 +10,12 @@ import (
 	"os/signal"
 	"runtime"
 
-	"github.com/gofu/gomon"
+	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/server"
 )
 
 func main() {
-	var conf gomon.ServerConfig
+	var conf config.Server
 	flag.StringVar(&conf.Addr, "addr", "127.0.0.1:7656", "HTTP listen address")
 	flag.StringVar(&conf.PProfURL, "url", "http://127.0.0.1:7656/debug/pprof", "Remote /debug/pprof URL")
 	flag.StringVar(&conf.Local.Root, "local-root", runtime.GOROOT(), "Local project root")
@@ -25,7 +26,7 @@ func main() {
 	flag.StringVar(&conf.Remote.GoPath, "remote-gopath", "", "Remote GOPATH")
 	flag.Parse()
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := gomon.StartServer(ctx, conf)
+	err := server.StartServer(ctx, conf)
 	if err != nil {
 		log.Fatal(err)
 	}

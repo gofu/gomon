@@ -1,4 +1,5 @@
-package gomon
+// Package style contains styles for source code colorization.
+package style
 
 import (
 	"github.com/alecthomas/chroma"

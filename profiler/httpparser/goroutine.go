@@ -1,4 +1,5 @@
-package gomon
+// Package httpparser parses /debug/pprof output into structured data.
+package httpparser
 
 import (
 	"bufio"
@@ -9,20 +10,23 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/profiler"
 )
 
-// PProfParser parses the output of /debug/pprof/goroutine?debug=2 page.
-type PProfParser struct {
-	EnvConfig
+// Goroutine parses the output of /debug/pprof/goroutine?debug=2 page.
+type Goroutine struct {
+	config.Env
 }
 
 // Parse the output of /debug/pprof/goroutine?debug=2 page and returns goroutine info.
-func (p PProfParser) Parse(r io.Reader) ([]Goroutine, error) {
+func (p Goroutine) Parse(r io.Reader) ([]profiler.Goroutine, error) {
 	s := bufio.NewScanner(r)
-	s.Split(ScanDoubleLines)
-	var gs []Goroutine
+	s.Split(scanDoubleLines)
+	var gs []profiler.Goroutine
 	for s.Scan() {
-		goroutine, err := p.parseGoroutine(s.Text())
+		goroutine, err := p.ParseGoroutine(s.Text())
 		if err != nil {
 			return gs, err
 		}
@@ -41,9 +45,10 @@ var (
 	goroutineFileRegexp = regexp.MustCompile(`^\t(.*):(\d+)(?: (.*?))?$`)
 )
 
-func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
+// ParseGoroutine the raw text information of a single running goroutine.
+func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 	s := bufio.NewScanner(strings.NewReader(data))
-	var gr Goroutine
+	var gr profiler.Goroutine
 	var err error
 	for s.Scan() {
 		if len(s.Text()) == 0 {
@@ -87,7 +92,7 @@ func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
 		if cut := strings.IndexByte(method, '.'); cut != -1 {
 			pkg, method = pkg+method[:cut], method[cut+1:]
 		}
-		stack := StackElem{
+		stack := profiler.StackElem{
 			Caller:  caller,
 			Package: pkg,
 			Method:  method,
@@ -102,16 +107,16 @@ func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
 		}
 		if strings.HasPrefix(matches[1], p.Root) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.Root), "/")
-			stack.Root = RootTypeProject
+			stack.Root = profiler.RootTypeProject
 		} else if strings.HasPrefix(matches[1], p.GoRoot) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoRoot), "/")
-			stack.Root = RootTypeGoRoot
+			stack.Root = profiler.RootTypeGoRoot
 		} else if strings.HasPrefix(matches[1], p.GoPath) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoPath), "/")
-			stack.Root = RootTypeGoPath
+			stack.Root = profiler.RootTypeGoPath
 		} else if strings.HasPrefix(matches[1], "_cgo_") {
 			stack.File = matches[1]
-			stack.Root = RootTypeCGo
+			stack.Root = profiler.RootTypeCGo
 		} else {
 			return gr, fmt.Errorf("unknown component path: %q", matches[1])
 		}
@@ -120,7 +125,7 @@ func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
 			return gr, fmt.Errorf("invalid goroutine line: %s", matches[2])
 		}
 		stack.Extra = matches[3]
-		gr.Stack = append([]StackElem{stack}, gr.Stack...)
+		gr.Stack = append([]profiler.StackElem{stack}, gr.Stack...)
 	}
 	if err = s.Err(); err != nil {
 		return gr, err
@@ -131,8 +136,9 @@ func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
 	return gr, nil
 }
 
-// ScanDoubleLines is a copy of bufio.ScanLines that splits at \n\n.
-func ScanDoubleLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// scanDoubleLines is a copy of bufio.ScanLines that splits at \n\n.
+// It's used to split and parse output of /debug/pprof pages.
+func scanDoubleLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}

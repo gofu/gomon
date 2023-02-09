@@ -1,4 +1,5 @@
-package gomon
+// Package profiler contains goroutine profiling information.
+package profiler
 
 import (
 	"time"
@@ -18,6 +19,23 @@ const (
 	RootTypeCGo RootType = "CGO"
 )
 
+type FileLine struct {
+	// Root of the calling file.
+	Root RootType `json:"root"`
+	// File path, relative to Root.
+	File string `json:"file"`
+	// Line number, starting from 1.
+	Line int `json:"line"`
+}
+
+// Highlight HTML contains a source code segment.
+type Highlight struct {
+	// Prefix HTML contains the current line, and WrapSize lines preceding it.
+	Prefix string `json:"prefix,omitempty"`
+	// Suffix HTML contains WrapSize lines succeeding the current line.
+	Suffix string `json:"suffix,omitempty"`
+}
+
 // StackElem contains a running goroutine's caller stack info.
 type StackElem struct {
 	Caller  bool   `json:"caller"`
@@ -25,7 +43,7 @@ type StackElem struct {
 	Method  string `json:"method"`
 	Args    string `json:"args,omitempty"`
 	Extra   string `json:"extra,omitempty"`
-	FileInfo
+	FileLine
 	Highlight
 }
 
@@ -36,6 +54,8 @@ type Goroutine struct {
 	Stack    []StackElem   `json:"stack,omitempty"`
 }
 
+// Profiler provides profiling information.
 type Profiler interface {
+	// Goroutines that are currently running, without Highlight data.
 	Goroutines() ([]Goroutine, error)
 }
