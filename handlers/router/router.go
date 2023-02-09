@@ -1,4 +1,5 @@
-package handlers
+// Package router contains HTTP routing information for use across handlers.
+package router
 
 // Router defines available HTTP routes
 // for use across different handlers.
