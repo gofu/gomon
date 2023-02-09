@@ -12,16 +12,21 @@ import (
 	"github.com/gofu/gomon/style"
 )
 
+// Highlighter provides styled HTML segment of a source code.
 type Highlighter interface {
+	// Highlight fills *profiler.Highlight with source code around
+	// the provided file/line.
 	Highlight(profiler.FileLine, Options, *profiler.Highlight) error
 }
 
+// Options for highlighting a line.
 type Options struct {
 	// WrapSize is the number of lines preceding/succeeding the current line.
 	// Negative number disables highlight.
 	WrapSize int `json:"wrapSize"`
 }
 
+// Tokens fills *profiler.Highlight with styled HTML of a source code segment.
 func Tokens(allTokens []chroma.Token, line int, opts Options, hl *profiler.Highlight) error {
 	if hl == nil {
 		return fmt.Errorf("cannot highlight nil %T", hl)

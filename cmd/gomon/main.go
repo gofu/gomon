@@ -26,7 +26,7 @@ func main() {
 	flag.StringVar(&conf.Remote.GoPath, "remote-gopath", "", "Remote GOPATH")
 	flag.Parse()
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := server.StartServer(ctx, conf)
+	err := server.ListenAndServe(ctx, conf)
 	if err != nil {
 		log.Fatal(err)
 	}
