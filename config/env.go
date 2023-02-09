@@ -9,7 +9,6 @@ import (
 )
 
 // Env contains absolute paths that can contain .go source files.
-// on a single environment.
 type Env struct {
 	// Root of the project source code root path.
 	Root string
