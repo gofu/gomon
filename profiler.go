@@ -20,12 +20,11 @@ const (
 
 // StackElem contains a running goroutine's caller stack info.
 type StackElem struct {
-	Caller    bool   `json:"caller"`
-	Package   string `json:"package"`
-	Method    string `json:"method"`
-	Args      string `json:"args,omitempty"`
-	ShortFile string `json:"shortFile"`
-	Extra     string `json:"extra,omitempty"`
+	Caller  bool   `json:"caller"`
+	Package string `json:"package"`
+	Method  string `json:"method"`
+	Args    string `json:"args,omitempty"`
+	Extra   string `json:"extra,omitempty"`
 	FileInfo
 	Highlight
 }

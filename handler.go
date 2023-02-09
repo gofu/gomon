@@ -67,7 +67,7 @@ func (h *Handler) execIndex(ctx context.Context, query url.Values) (IndexData, e
 		return data, err
 	}
 	data.Running, data.Skipped = data.GoroutineFilter.Filter(running)
-	if data.Lines >= 0 {
+	if data.WrapSize >= 0 {
 		err = markupGoroutines(ctx, data.Running, &h.highlighter, data.MarkupOptions)
 		if err != nil {
 			return data, err

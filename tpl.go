@@ -58,9 +58,7 @@ func (f GoroutineFilter) Filter(running []Goroutine) ([]Goroutine, int) {
 type MarkupOptions struct {
 	// MarkupLimit is the max number of highlighted goroutines.
 	MarkupLimit int
-	// Lines to include before and after the current line.
-	// Negative number disables highlight.
-	Lines int
+	HighlightOptions
 }
 
 type RequestData struct {
@@ -91,7 +89,7 @@ func ParseRequestData(query url.Values) (RequestData, error) {
 		}
 	}
 	if linesStr := query.Get("lines"); len(linesStr) != 0 {
-		data.Lines, err = strconv.Atoi(linesStr)
+		data.WrapSize, err = strconv.Atoi(linesStr)
 		if err != nil {
 			errs = append(errs, err)
 		}

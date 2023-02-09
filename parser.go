@@ -102,16 +102,12 @@ func (p PProfParser) parseGoroutine(data string) (Goroutine, error) {
 		}
 		if strings.HasPrefix(matches[1], p.Root) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.Root), "/")
-			stack.ShortFile = stack.File
 			stack.Root = RootTypeProject
 		} else if strings.HasPrefix(matches[1], p.GoRoot) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoRoot), "/")
-			stack.ShortFile = strings.TrimPrefix(stack.File, "src/")
 			stack.Root = RootTypeGoRoot
 		} else if strings.HasPrefix(matches[1], p.GoPath) {
 			stack.File = strings.TrimLeft(strings.TrimPrefix(matches[1], p.GoPath), "/")
-			stack.ShortFile = strings.TrimPrefix(stack.File, "pkg/")
-			stack.ShortFile = strings.TrimPrefix(stack.ShortFile, "mod/")
 			stack.Root = RootTypeGoPath
 		} else if strings.HasPrefix(matches[1], "_cgo_") {
 			stack.File = matches[1]

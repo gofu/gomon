@@ -132,9 +132,9 @@
             <label>Show lines before/after:
                 <select name="lines" onchange="this.form.submit()">
                     <option value="-1">Off</option>
-                    <option {{if eq .Lines 0}}selected{{end}}>0</option>
+                    <option {{if eq .WrapSize 0}}selected{{end}}>0</option>
                     {{range $con := .Contexts}}
-                        <option {{if eq $.Lines $con}}selected{{end}}>{{$con}}</option>
+                        <option {{if eq $.WrapSize $con}}selected{{end}}>{{$con}}</option>
                     {{end}}
                 </select>
             </label>
@@ -153,8 +153,8 @@
                 {{if and (eq $i 0) (not .Caller)}}
                     <span class="go-line">Main goroutine!</span>
                 {{end}}
-                {{if .ShortFile}}
-                    <span class="go-file" contenteditable>{{.ShortFile}}<span class="go-line">:{{.Line}}</span></span>
+                {{if .File}}
+                    <span class="go-file" contenteditable>{{.File}}<span class="go-line">:{{.Line}}</span></span>
                 {{end}}
             </legend>
             <div>

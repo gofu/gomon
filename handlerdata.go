@@ -32,7 +32,7 @@ func fibSlice[T constraints.Integer | constraints.Float](count int, multiplier T
 
 // markupGoroutines fills highlight data for up to markupLimit goroutines.
 func markupGoroutines(ctx context.Context, goroutines []Goroutine, highlighter Highlighter, options MarkupOptions) error {
-	opts := HighlightOptions{WrapSize: options.Lines}
+	opts := HighlightOptions{WrapSize: options.WrapSize}
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(runtime.NumCPU())
 	var err error
