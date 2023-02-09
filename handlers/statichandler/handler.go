@@ -1,3 +1,4 @@
+// Package statichandler serves static files.
 package statichandler
 
 import (
@@ -7,8 +8,10 @@ import (
 	"strings"
 )
 
+// FaviconURL is the default favicon URL requested by browsers.
 const FaviconURL = "/favicon.ico"
 
+// Handler serves static files.
 type Handler struct{}
 
 //go:embed favicon.png

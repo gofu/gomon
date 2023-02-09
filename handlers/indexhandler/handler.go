@@ -1,3 +1,4 @@
+// Package indexhandler serves index page HTML.
 package indexhandler
 
 import (
@@ -8,7 +9,9 @@ import (
 	"github.com/gofu/gomon/handlers"
 )
 
+// Handler serves static index page.
 type Handler struct {
+	// Data to pass to template.
 	Data
 }
 
@@ -18,6 +21,7 @@ var (
 	tpl     = template.Must(template.New("").Parse(tplData))
 )
 
+// New returns Handler that serves static data.
 func New(data Data) Handler {
 	return Handler{Data: data}
 }
