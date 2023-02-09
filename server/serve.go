@@ -25,7 +25,7 @@ func ListenAndServe(ctx context.Context, conf config.Server) error {
 	}
 	log.Printf("Listening on http://%s", ln.Addr())
 	group, ctx := errgroup.WithContext(ctx)
-	prof := httpprofiler.New(conf.PProfURL, conf.Remote.WithDefaults(conf.Local).Normalize())
+	prof := httpprofiler.New(conf.PProfURL, conf.Remote.WithDefaults(conf.Local))
 	hl := &highlightfs.FS{Env: conf.Local}
 	srv := &http.Server{
 		Addr:              ln.Addr().String(),

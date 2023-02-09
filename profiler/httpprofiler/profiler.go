@@ -29,7 +29,7 @@ func New(pprofURL string, env config.Env) *Profiler {
 	}
 	return &Profiler{
 		url:    pprofURL,
-		parser: httpparser.Goroutine{Env: env},
+		parser: httpparser.Goroutine{Env: env.Normalize()},
 	}
 }
 
