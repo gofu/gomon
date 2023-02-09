@@ -10,7 +10,7 @@ import (
 
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/lexers/g"
-	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/env"
 	"github.com/gofu/gomon/highlight"
 	"github.com/gofu/gomon/profiler"
 	"golang.org/x/sync/singleflight"
@@ -20,7 +20,7 @@ import (
 // from multiple goroutines, and caches highlighted file source.
 type FS struct {
 	FS    fs.FS
-	Env   config.Env
+	Env   env.Env
 	mu    sync.RWMutex
 	sf    singleflight.Group
 	cache map[string][]chroma.Token

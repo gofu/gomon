@@ -9,16 +9,29 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/env"
 	"github.com/gofu/gomon/highlight/highlightfs"
 	"github.com/gofu/gomon/profiler/httpprofiler"
 	"golang.org/x/sync/errgroup"
 )
 
+// Config for running an HTTP server serving profiler info.
+type Config struct {
+	// Addr is the HTTP address to listen on.
+	Addr string
+	// PProfURL is the remote /debug/pprof URL to query.
+	PProfURL string
+	// Local environment info, used to parse .go source files.
+	Local env.Env
+	// Remote environment info, used to map results of PProfURL
+	// to Local environment for highlighting. May be empty.
+	Remote env.Env
+}
+
 // ListenAndServe starts an HTTP server on configured address, showing running
 // goroutines and their call stack context, fetched from .go source files.
 // Canceling ctx stops the server, and returns ctx.Err().
-func ListenAndServe(ctx context.Context, conf config.Server) error {
+func ListenAndServe(ctx context.Context, conf Config) error {
 	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
 		return err

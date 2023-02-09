@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/env"
 	"github.com/gofu/gomon/profiler"
 	"github.com/gofu/gomon/profiler/httpparser"
 )
@@ -22,14 +22,14 @@ type Profiler struct {
 // New expects pprofURL to be a default /debug/pprof/ page.
 // The env defines file path prefixes for the parser, to group them
 // by their defining package group (source, GOROOT, GOPATH).
-func New(pprofURL string, env config.Env) *Profiler {
+func New(pprofURL string, env env.Env) *Profiler {
 	pprofURL = strings.TrimRight(pprofURL, "/")
 	if len(pprofURL) != 0 && !strings.Contains(pprofURL, "://") {
 		pprofURL = "http://" + pprofURL
 	}
 	return &Profiler{
 		url:    pprofURL,
-		parser: httpparser.Goroutine{Env: env.Normalize()},
+		parser: httpparser.Goroutine{Env: env.Normalized()},
 	}
 }
 

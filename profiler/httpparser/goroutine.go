@@ -11,13 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofu/gomon/config"
+	"github.com/gofu/gomon/env"
 	"github.com/gofu/gomon/profiler"
 )
 
 // Goroutine parses the output of /debug/pprof/goroutine?debug=2 page.
 type Goroutine struct {
-	config.Env
+	env.Env
 }
 
 // Parse the output of /debug/pprof/goroutine?debug=2 page and returns goroutine info.

@@ -1,4 +1,5 @@
-package config
+// Package env provides environment configuration containing .go source files.
+package env
 
 import (
 	"fmt"
@@ -61,15 +62,16 @@ func (e Env) ParseFile(file string) (profiler.RootType, string, error) {
 	}
 }
 
-func (e Env) Normalize() Env {
+// Normalized runs normalizePaths on each environment path.
+func (e Env) Normalized() Env {
 	e.Root = normalizePath(e.Root)
 	e.GoRoot = normalizePath(e.GoRoot)
 	e.GoPath = normalizePath(e.GoPath)
 	return e
 }
 
-// normalizePath replaces runs path.Clean on p, replaces backlashes
-// with slashes, and appends trailing slash if p!="".
+// normalizePath runs path.Clean on p, replaces backlashes
+// with slashes, and appends trailing slash; if len(p)!=0.
 func normalizePath(p string) string {
 	if len(p) == 0 {
 		return ""
@@ -77,6 +79,7 @@ func normalizePath(p string) string {
 	return strings.TrimRight(strings.ReplaceAll(path.Clean(p), "\\", "/"), "/") + "/"
 }
 
+// cutPrefix trims prefix from s and reports whether prefix was found and removed.
 func cutPrefix(s, prefix string) (string, bool) {
 	if strings.HasPrefix(s, prefix) {
 		return s[len(prefix):], true

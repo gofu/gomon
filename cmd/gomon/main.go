@@ -10,12 +10,11 @@ import (
 	"os/signal"
 	"runtime"
 
-	"github.com/gofu/gomon/config"
 	"github.com/gofu/gomon/server"
 )
 
 func main() {
-	var conf config.Server
+	var conf server.Config
 	flag.StringVar(&conf.Addr, "addr", "127.0.0.1:7656", "HTTP listen address")
 	flag.StringVar(&conf.PProfURL, "url", "http://127.0.0.1:7656/debug/pprof", "Remote /debug/pprof URL")
 	flag.StringVar(&conf.Local.Root, "local-root", workDir(), "Local project root")
