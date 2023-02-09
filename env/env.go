@@ -48,7 +48,10 @@ func (e Env) RootPath(t profiler.RootType) string {
 	}
 }
 
-func (e Env) ParseFile(file string) (profiler.RootType, string, error) {
+// FileLocation returns environment root that the file belongs to, and
+// its path relative to the root. If it cannot be determined where the
+// file belongs in environment, an error is returned.
+func (e Env) FileLocation(file string) (profiler.RootType, string, error) {
 	if f, ok := cutPrefix(file, e.Root); ok {
 		return profiler.RootTypeProject, f, nil
 	} else if f, ok = cutPrefix(file, e.GoRoot); ok {

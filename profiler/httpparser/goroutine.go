@@ -105,7 +105,7 @@ func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 		if len(matches) != 4 {
 			return gr, fmt.Errorf("invalid goroutine file: %s", s.Text())
 		}
-		stack.Root, stack.File, err = p.Env.ParseFile(matches[1])
+		stack.Root, stack.File, err = p.Env.FileLocation(matches[1])
 		stack.Line, err = strconv.Atoi(matches[2])
 		if err != nil {
 			return gr, fmt.Errorf("invalid goroutine line: %s", matches[2])
