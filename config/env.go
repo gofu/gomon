@@ -20,7 +20,7 @@ type Env struct {
 }
 
 // WithDefaults returns a new Env, with empty string
-// values defaulting to values from conf.
+// values defaulting to values from defaults.
 func (e Env) WithDefaults(defaults Env) Env {
 	if len(e.Root) == 0 {
 		e.Root = defaults.Root
