@@ -30,7 +30,7 @@ func NewServeMux(hl highlight.Highlighter, prof profiler.Profiler) *http.ServeMu
 	mux.Handle(routes.JSON, jsonhandler.New(prof))
 	mux.Handle(routes.HTML, htmlhandler.New(hl, prof))
 	index := indexhandler.Data{
-		PProfURL: prof.Source(),
+		ProfilerSource: prof.Source(),
 		Links: []indexhandler.Link{
 			{"index", routes.Index, "this page"},
 			{"HTML", routes.HTML, "running goroutines in HTML format"},

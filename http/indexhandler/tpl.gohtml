@@ -7,10 +7,10 @@
 </head>
 <body>
 <h1>GoMon</h1>
-<p>Monitor running goroutines on <a href="{{.PProfURL}}" rel="noopener">{{.PProfURL}}</a></p>
+<p>Monitor running goroutines on <a href="{{.ProfilerSource}}" rel="noopener">{{.ProfilerSource}}</a></p>
 <ul>
     {{range .Links}}
-        <li><a href="{{.HREF}}">{{.Name}}</a> - {{.Desc}}</li>
+        <li><a href="{{.HREF}}">{{.Text}}</a> - {{.Description}}</li>
     {{end}}
 </ul>
 </body>
