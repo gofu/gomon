@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/gofu/gomon/handlers/htmlhandler"
-	"github.com/gofu/gomon/handlers/indexhandler"
-	"github.com/gofu/gomon/handlers/jsonhandler"
-	"github.com/gofu/gomon/handlers/router"
-	"github.com/gofu/gomon/handlers/statichandler"
 	"github.com/gofu/gomon/highlight"
+	"github.com/gofu/gomon/http/htmlhandler"
+	"github.com/gofu/gomon/http/indexhandler"
+	"github.com/gofu/gomon/http/jsonhandler"
+	"github.com/gofu/gomon/http/router"
+	"github.com/gofu/gomon/http/statichandler"
 	"github.com/gofu/gomon/profiler"
 )
 

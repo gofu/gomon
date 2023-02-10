@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/gofu/gomon/handlers"
 	"github.com/gofu/gomon/highlight"
+	"github.com/gofu/gomon/http/serve"
 	"github.com/gofu/gomon/profiler"
 	"golang.org/x/exp/constraints"
 )
@@ -31,10 +31,10 @@ func New(highlighter highlight.Highlighter, prof profiler.Profiler) *Handler {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data, err := h.Execute(r.Context(), r.URL.Query())
 	if err != nil {
-		handlers.ServeError(w, r, err)
+		serve.Error(w, r, err)
 		return
 	}
-	handlers.ServeTemplate(w, r, tpl, data)
+	serve.HTMLTemplate(w, r, tpl, data)
 }
 
 var (

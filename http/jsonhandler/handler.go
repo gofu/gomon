@@ -4,7 +4,7 @@ package jsonhandler
 import (
 	"net/http"
 
-	"github.com/gofu/gomon/handlers"
+	"github.com/gofu/gomon/http/serve"
 	"github.com/gofu/gomon/profiler"
 )
 
@@ -21,8 +21,8 @@ func New(prof profiler.Profiler) Handler {
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	running, err := h.prof.Goroutines()
 	if err != nil {
-		handlers.ServeError(w, r, err)
+		serve.Error(w, r, err)
 		return
 	}
-	handlers.ServeJSON(w, r, running)
+	serve.JSON(w, r, running)
 }

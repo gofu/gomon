@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/gofu/gomon/handlers"
+	"github.com/gofu/gomon/http/serve"
 )
 
 // Handler serves static index page.
@@ -27,5 +27,5 @@ func New(data Data) Handler {
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handlers.ServeTemplate(w, r, tpl, h.Data)
+	serve.HTMLTemplate(w, r, tpl, h.Data)
 }

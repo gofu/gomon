@@ -15,8 +15,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Config for running an HTTP server serving profiler info.
-type Config struct {
+// Server configuration for listening and source code markup.
+type Server struct {
 	// Addr is the HTTP address to listen on.
 	Addr string
 	// PProfURL is the remote /debug/pprof URL to query.
@@ -31,7 +31,7 @@ type Config struct {
 // ListenAndServe starts an HTTP server on configured address, showing running
 // goroutines and their call stack context, fetched from .go source files.
 // Canceling ctx stops the server, and returns ctx.Err().
-func ListenAndServe(ctx context.Context, conf Config) error {
+func ListenAndServe(ctx context.Context, conf Server) error {
 	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
 		return err
