@@ -26,6 +26,9 @@ type Server struct {
 	// Remote environment info, used to map results of PProfURL
 	// to Local environment for highlighting. May be empty.
 	Remote env.Env
+	// RemoteSSH connections to reach process host machine,
+	// for direct memory reading.
+	RemoteSSH []string
 }
 
 // ListenAndServe starts an HTTP server on configured address, showing running

@@ -10,6 +10,8 @@ type Router struct {
 	HTML string
 	// JSON list of running goroutines.
 	JSON string
+	// Graph projection of running goroutines.
+	Graph string
 	// PProf debug info (by default /debug/pprof)
 	PProf string
 }

@@ -53,6 +53,7 @@ func (h *Handler) Execute(ctx context.Context, query url.Values) (Data, error) {
 	if err != nil {
 		return data, err
 	}
+	profiler.Sort(running)
 	data.Total = len(running)
 	data.Request, err = ParseRequest(query)
 	if err != nil {

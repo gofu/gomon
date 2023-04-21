@@ -24,5 +24,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		serve.Error(w, r, err)
 		return
 	}
+	profiler.Sort(running)
 	serve.JSON(w, r, running)
 }

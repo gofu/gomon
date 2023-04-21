@@ -5,6 +5,7 @@ import (
 	"net/http/pprof"
 
 	"github.com/gofu/gomon/highlight"
+	"github.com/gofu/gomon/http/graphhandler"
 	"github.com/gofu/gomon/http/htmlhandler"
 	"github.com/gofu/gomon/http/indexhandler"
 	"github.com/gofu/gomon/http/jsonhandler"
@@ -21,20 +22,22 @@ import (
 func NewServeMux(hl highlight.Highlighter, prof profiler.Profiler) *http.ServeMux {
 	routes := router.Default
 	mux := http.NewServeMux()
+	mux.Handle(statichandler.FaviconURL, statichandler.Handler{})
 	mux.HandleFunc(routes.PProf, pprof.Index)
 	mux.HandleFunc(routes.PProf+"cmdline", pprof.Cmdline)
 	mux.HandleFunc(routes.PProf+"profile", pprof.Profile)
 	mux.HandleFunc(routes.PProf+"symbol", pprof.Symbol)
 	mux.HandleFunc(routes.PProf+"trace", pprof.Trace)
-	mux.Handle(statichandler.FaviconURL, statichandler.Handler{})
 	mux.Handle(routes.JSON, jsonhandler.New(prof))
 	mux.Handle(routes.HTML, htmlhandler.New(hl, prof))
+	mux.Handle(routes.Graph, graphhandler.New(prof))
 	index := indexhandler.Data{
 		ProfilerSource: prof.Source(),
 		Links: []indexhandler.Link{
 			{"index", routes.Index, "this page"},
 			{"HTML", routes.HTML, "running goroutines in HTML format"},
 			{"JSON", routes.JSON, "running goroutines in JSON format"},
+			{"graph", routes.Graph, "graph projection of running goroutines"},
 			{"pprof", routes.PProf, "debug profiler"},
 		},
 	}

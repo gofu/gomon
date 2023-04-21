@@ -93,10 +93,12 @@ func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 			pkg, method = pkg+method[:cut], method[cut+1:]
 		}
 		stack := profiler.CallStack{
-			Caller:  caller,
-			Package: pkg,
-			Method:  method,
-			Args:    matches[2],
+			CallInfo: profiler.CallInfo{
+				Called:  caller,
+				Package: pkg,
+				Method:  method,
+				Args:    matches[2],
+			},
 		}
 		if !s.Scan() {
 			return gr, fmt.Errorf("could not advance scanner")

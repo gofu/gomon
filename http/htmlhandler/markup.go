@@ -9,6 +9,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+type MarkupOptions struct {
+	// MarkupLimit is the max number of highlighted goroutines.
+	MarkupLimit int
+	highlight.Options
+}
+
 // MarkupGoroutines fills highlight data (HTML) for provided goroutines.
 func MarkupGoroutines(ctx context.Context, goroutines []profiler.Goroutine, highlighter highlight.Highlighter, options MarkupOptions) error {
 	opts := highlight.Options{WrapSize: options.WrapSize}

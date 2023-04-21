@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofu/gomon/highlight"
 	"github.com/gofu/gomon/profiler"
 )
 
@@ -56,12 +55,6 @@ func (f Filter) Filter(gs []profiler.Goroutine) ([]profiler.Goroutine, int) {
 		filtered = append(filtered, g)
 	}
 	return filtered, skipped
-}
-
-type MarkupOptions struct {
-	// MarkupLimit is the max number of highlighted goroutines.
-	MarkupLimit int
-	highlight.Options
 }
 
 type Request struct {

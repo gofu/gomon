@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
 	"strings"
 
 	"github.com/gofu/gomon/env"
@@ -48,12 +47,6 @@ func (s *Profiler) Goroutines() ([]profiler.Goroutine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %s response: %w", s.url+uri, err)
 	}
-	sort.Slice(running, func(i, j int) bool {
-		if len(running[i].CallStack) > 0 && !running[i].CallStack[0].Caller {
-			return true
-		}
-		return running[i].Duration > running[j].Duration
-	})
 	return running, nil
 }
 

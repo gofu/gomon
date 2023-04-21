@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 
 	"github.com/gofu/gomon/server"
 )
@@ -23,6 +24,7 @@ func main() {
 	flag.StringVar(&s.Remote.Root, "remote-root", "", "Remote project root")
 	flag.StringVar(&s.Remote.GoRoot, "remote-goroot", "", "Remote GOROOT")
 	flag.StringVar(&s.Remote.GoPath, "remote-gopath", "", "Remote GOPATH")
+	flag.Var((*sliceFlags)(&s.RemoteSSH), "remote-ssh", "Remote SSH connections to reach process host machine, for direct memory reading")
 	flag.Parse()
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 	err := server.ListenAndServe(ctx, s)
@@ -34,4 +36,15 @@ func main() {
 func currentDir() string {
 	wd, _ := os.Getwd()
 	return wd
+}
+
+type sliceFlags []string
+
+func (i *sliceFlags) String() string {
+	return strings.Join(*i, " ")
+}
+
+func (i *sliceFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
 }
