@@ -36,8 +36,9 @@ func (p Goroutine) Parse(r io.Reader) ([]profiler.Goroutine, error) {
 }
 
 var (
+	// matches output of runtime.goroutineheader
 	// goroutine 11847977 [chan receive, 5 minutes]:
-	goroutineIDRegexp = regexp.MustCompile(`^goroutine (\d+) \[([^,\]]+)(?:, (\d+) minutes)?]:$`)
+	goroutineIDRegexp = regexp.MustCompile(`^goroutine (\d+) \[([^,\]]+)(?: \(scan\))?(?:, (\d+) minutes)?(?:, locked to thread)?]:$`)
 	// github.com/streadway/amqp.(*consumers).buffer(0xc01f9c6120, 0xc04b4369c0, 0xc04b436960)
 	goroutineStackRegexp = regexp.MustCompile(`^(.*)\((.*?)\)$`)
 	//     /home/ubuntu/workspace/pipeline_ci_cloner_worker/build/go/cloner/cloner.go:1175 +0x7eb
@@ -73,11 +74,10 @@ func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 			}
 			continue
 		}
-		var caller bool
 		var matches []string
 		const createdByPrefix = "created by "
 		if strings.HasPrefix(s.Text(), createdByPrefix) {
-			caller = true
+			// main goroutine
 			matches = []string{"", strings.TrimPrefix(s.Text(), createdByPrefix), ""}
 		} else {
 			matches = goroutineStackRegexp.FindStringSubmatch(s.Text())
@@ -93,7 +93,6 @@ func (p Goroutine) ParseGoroutine(data string) (profiler.Goroutine, error) {
 			pkg, method = pkg+method[:cut], method[cut+1:]
 		}
 		stack := profiler.CallStack{
-			Caller:  caller,
 			Package: pkg,
 			Method:  method,
 			Args:    matches[2],

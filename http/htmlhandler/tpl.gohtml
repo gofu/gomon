@@ -147,6 +147,7 @@
 </div>
 {{range .Running}}
     <div class="go">
+        {{$g:=.}}
         <span class="go-id" title="Goroutine ID">Go#{{.ID}}</span>
         <span class="go-op">{{.Op}}</span>
         <span class="go-duration">{{.Duration}}</span>
@@ -154,7 +155,7 @@
         <fieldset class="go-root go-root-{{.Root}}">
             <legend><span class="go-package">{{.Package}}.</span><span class="go-method">{{.Method}}</span>
                 <span class="go-root-label go-root-label-{{.Root}}">{{.Root}}</span>
-                {{if and (eq $i 0) (not .Caller)}}
+                {{if and (eq $i 0) (eq $g.ID 1)}}
                     <span class="go-line">Main goroutine!</span>
                 {{end}}
                 {{if .File}}

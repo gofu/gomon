@@ -75,7 +75,8 @@ func (h *FS) getTokens(file string) ([]chroma.Token, error) {
 		h.mu.Unlock()
 		return tokens, nil
 	})
-	return v.([]chroma.Token), err
+	cached, _ = v.([]chroma.Token)
+	return cached, err
 }
 
 // readFSFile reads file content from readFS, or local filesystem if readFS==nil.
